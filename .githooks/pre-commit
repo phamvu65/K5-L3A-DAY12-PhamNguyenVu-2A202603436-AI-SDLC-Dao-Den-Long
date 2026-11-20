@@ -1,0 +1,10 @@
+#!/bin/sh
+# Pre-commit hook: Chặn commit nếu bộ test contract hoặc tính tất định bị đỏ
+echo "[Harness Hook] Running contract & determinism verification..."
+node tests/run_tests.js
+if [ $? -ne 0 ]; then
+  echo "[Harness Hook] ERROR: Tests failed! Fix errors before committing."
+  exit 1
+fi
+echo "[Harness Hook] All checks passed."
+exit 0
