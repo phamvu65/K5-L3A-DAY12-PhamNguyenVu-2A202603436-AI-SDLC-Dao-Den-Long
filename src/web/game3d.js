@@ -626,23 +626,63 @@
     const litCount = world.lanterns.filter(l => l.lit).length;
     const ambient = 0.15 + 0.55 * (litCount / Math.max(1, world.lanterns.length));
 
-    // Sky #0E1430 -> #1B2350 brightened by ambient
-    const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    // 1. Fairy-tale Purple-Blue Night Sky & Glowing Full Moon (inspired by reference image 3)
+    const sky = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.68);
     sky.addColorStop(0, '#0E1430');
-    sky.addColorStop(1, ambient > 0.45 ? '#26336B' : '#1B2350');
+    sky.addColorStop(0.45, ambient > 0.45 ? '#452C85' : '#2C1F5E');
+    sky.addColorStop(0.82, ambient > 0.45 ? '#8748C9' : '#583496');
+    sky.addColorStop(1, ambient > 0.45 ? '#D88EE8' : '#7B4EB2');
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Twinkling stars
     for (const st of stars) {
       const sx = ((st.u * canvas.width - camYawDeg * 3.0) % canvas.width + canvas.width) % canvas.width;
-      const sy = st.v * canvas.height * 0.55;
-      ctx.fillStyle = `rgba(245,241,230,${0.4 + 0.5 * Math.sin(now * 0.003 + st.phase)})`;
+      const sy = st.v * canvas.height * 0.52;
+      ctx.fillStyle = `rgba(255, 248, 225, ${0.4 + 0.55 * Math.sin(now * 0.003 + st.phase)})`;
       ctx.beginPath(); ctx.arc(sx, sy, st.r, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Sea of clouds backdrop tint (#12384A)
-    ctx.fillStyle = 'rgba(18, 56, 74, 0.35)';
-    ctx.fillRect(0, canvas.height * 0.55, canvas.width, canvas.height * 0.45);
+    // Large Glowing Full Moon with wispy purple clouds
+    const moonX = ((canvas.width * 0.62 - camYawDeg * 2.0) % canvas.width + canvas.width) % canvas.width;
+    const moonY = canvas.height * 0.19;
+    const moonGlow = ctx.createRadialGradient(moonX, moonY, 16, moonX, moonY, 130);
+    moonGlow.addColorStop(0, 'rgba(255, 244, 195, 0.96)');
+    moonGlow.addColorStop(0.35, 'rgba(255, 200, 145, 0.35)');
+    moonGlow.addColorStop(1, 'rgba(180, 110, 230, 0)');
+    ctx.fillStyle = moonGlow;
+    ctx.beginPath(); ctx.arc(moonX, moonY, 130, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = '#FFF3C4';
+    ctx.beginPath(); ctx.arc(moonX, moonY, 34, 0, Math.PI * 2); ctx.fill();
+
+    // Distant Purple Mountain & Pine Forest Silhouette (parallax with camera yaw)
+    const horizonY = canvas.height * 0.54;
+    const drawParallaxRidge = (baseY, amp, freq, color, treeFreq) => {
+      const offset = (camYawDeg * 4.5) % 400;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height);
+      for (let x = 0; x <= canvas.width + 20; x += 18) {
+        const wx = x + offset;
+        const h = Math.sin(wx * freq) * amp + Math.cos(wx * freq * 2.1) * (amp * 0.45);
+        const treeSpike = treeFreq > 0 ? Math.abs(Math.sin(wx * treeFreq)) * 18 : 0;
+        ctx.lineTo(x, baseY - h - treeSpike);
+      }
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.closePath();
+      ctx.fill();
+    };
+    drawParallaxRidge(horizonY + 8, 32, 0.008, '#2C2159', 0);
+    drawParallaxRidge(horizonY + 22, 16, 0.012, '#1B1A44', 0.11);
+    drawParallaxRidge(horizonY + 34, 10, 0.015, '#121836', 0.16);
+
+    // Sea of clouds / misty valley lake backdrop (#12384A)
+    const valleyGrad = ctx.createLinearGradient(0, horizonY + 15, 0, canvas.height);
+    valleyGrad.addColorStop(0, 'rgba(72, 65, 140, 0.48)');
+    valleyGrad.addColorStop(1, 'rgba(18, 56, 74, 0.88)');
+    ctx.fillStyle = valleyGrad;
+    ctx.fillRect(0, horizonY + 15, canvas.width, canvas.height - horizonY);
 
     const cam = createCamera(world.player.pos);
 
@@ -728,7 +768,47 @@
       }
     }
 
-    // Lanterns
+    // Decorative Pine Trees around island rim (inspired by reference image 3)
+    const pineCount = world.night === 2 ? 0 : 14;
+    for (let i = 0; i < pineCount; i++) {
+      const ang = (i / pineCount) * Math.PI * 2 + 0.18;
+      const rad = world.night === 3 ? 41.5 : 37.0;
+      const px = Math.cos(ang) * rad;
+      const pz = Math.sin(ang) * rad;
+      const pr = cam.project(px, 2.0, pz);
+      if (!pr) continue;
+      drawables.push({
+        zCam: pr.zCam,
+        draw: () => {
+          const base = cam.project(px, 0, pz);
+          const mid1 = cam.project(px, 1.5, pz);
+          const mid2 = cam.project(px, 3.2, pz);
+          const tip = cam.project(px, 5.2, pz);
+          if (!base || !mid1 || !mid2 || !tip) return;
+          const s = base.scale;
+          // Trunk
+          ctx.strokeStyle = '#3B2820';
+          ctx.lineWidth = Math.max(3, 0.35 * s);
+          ctx.beginPath(); ctx.moveTo(base.sx, base.sy); ctx.lineTo(mid1.sx, mid1.sy); ctx.stroke();
+          // Layered pine foliage
+          ctx.fillStyle = '#182B3A';
+          ctx.strokeStyle = '#364A7A';
+          ctx.lineWidth = 1;
+          for (const [topP, botP, wScale] of [[mid2, mid1, 1.5], [tip, mid2, 1.1]]) {
+            const tw = Math.max(8, wScale * topP.scale);
+            ctx.beginPath();
+            ctx.moveTo(topP.sx, topP.sy);
+            ctx.lineTo(botP.sx - tw, botP.sy);
+            ctx.lineTo(botP.sx + tw, botP.sy);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+      });
+    }
+
+    // Lanterns (Japanese Chōchin pleated paper lantern style from reference image 1)
     for (const l of world.lanterns) {
       const pr = cam.project(l.pos[0], l.pos[1] + 1.5, l.pos[2]);
       if (!pr) continue;
@@ -739,45 +819,104 @@
           const top = cam.project(l.pos[0], l.pos[1] + 3.4, l.pos[2]);
           if (!base || !top) return;
           const s = top.scale;
-          ctx.strokeStyle = l.lit ? '#FFB347' : '#5B5F6E';
-          ctx.lineWidth = Math.max(3, 0.3 * base.scale);
+
+          // Wooden post
+          ctx.strokeStyle = l.lit ? '#6B4A2F' : '#3E3B4F';
+          ctx.lineWidth = Math.max(3, 0.32 * base.scale);
           ctx.beginPath(); ctx.moveTo(base.sx, base.sy); ctx.lineTo(top.sx, top.sy); ctx.stroke();
 
-          if (l.lit) {
-            const g = ctx.createRadialGradient(top.sx, top.sy, 2, top.sx, top.sy, Math.max(18, 3.5 * s));
-            g.addColorStop(0, '#FFE9B0');
-            g.addColorStop(0.45, 'rgba(255,179,71,0.55)');
-            g.addColorStop(1, 'rgba(255,179,71,0)');
-            ctx.fillStyle = g;
-            ctx.beginPath(); ctx.arc(top.sx, top.sy, Math.max(18, 3.5 * s), 0, Math.PI * 2); ctx.fill();
-          }
-
-          const bw = Math.max(9, 1.0 * s);
-          const bh = Math.max(9, (l.lit ? 1.2 : 0.96) * s); // Unlit squashed 20%
           const fuelPct = l.lit ? l.fuel_ticks / world.fuelMaxTicks : 0;
           const isLowFuel = l.lit && fuelPct < 0.3;
           const blinkOff = isLowFuel && Math.floor(now / 500) % 2 === 1;
 
-          ctx.fillStyle = l.lit ? (blinkOff ? '#A86E22' : '#FFB347') : '#5B5F6E';
-          ctx.strokeStyle = l.lit ? '#FFE9B0' : '#8FA3B8';
-          ctx.lineWidth = 1.6;
-          ctx.beginPath(); ctx.roundRect(top.sx - bw / 2, top.sy - bh / 2, bw, bh, 4); ctx.fill(); ctx.stroke();
+          // Warm lantern aura
+          if (l.lit) {
+            const g = ctx.createRadialGradient(top.sx, top.sy, 2, top.sx, top.sy, Math.max(22, 4.0 * s));
+            g.addColorStop(0, 'rgba(255, 248, 215, 0.95)');
+            g.addColorStop(0.4, 'rgba(255, 185, 75, 0.55)');
+            g.addColorStop(1, 'rgba(255, 140, 25, 0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(top.sx, top.sy, Math.max(22, 4.0 * s), 0, Math.PI * 2); ctx.fill();
+          }
+
+          // Oval Chōchin paper body (squashed 20% when unlit)
+          const rw = Math.max(11, 0.72 * s);
+          const rh = Math.max(12, (l.lit ? 1.05 : 0.84) * s);
+
+          // Hanging tassel below lantern
+          ctx.strokeStyle = l.lit ? '#8C6538' : '#4E515E';
+          ctx.lineWidth = Math.max(1.2, 0.08 * s);
+          ctx.beginPath();
+          ctx.moveTo(top.sx, top.sy + rh);
+          ctx.lineTo(top.sx + Math.sin(now * 0.004) * 2, top.sy + rh + Math.max(6, 0.45 * s));
+          ctx.stroke();
+
+          // Paper body gradient
+          if (l.lit) {
+            const bodyGrad = ctx.createRadialGradient(top.sx, top.sy, rw * 0.15, top.sx, top.sy, rh * 1.1);
+            bodyGrad.addColorStop(0, blinkOff ? '#C98A3A' : '#FFFDF0');
+            bodyGrad.addColorStop(0.65, blinkOff ? '#9E6520' : '#FFE9B0');
+            bodyGrad.addColorStop(1, blinkOff ? '#754712' : '#FFB347');
+            ctx.fillStyle = bodyGrad;
+          } else {
+            ctx.fillStyle = '#5B5F6E';
+          }
+          ctx.strokeStyle = l.lit ? '#D98829' : '#8FA3B8';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.ellipse(top.sx, top.sy, rw, rh, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Horizontal bamboo ribs (pleats)
+          ctx.strokeStyle = l.lit ? 'rgba(180, 110, 35, 0.35)' : 'rgba(30, 34, 52, 0.35)';
+          ctx.lineWidth = 1;
+          for (const f of [-0.55, -0.25, 0, 0.25, 0.55]) {
+            const yOff = f * rh;
+            const xSpan = rw * Math.sqrt(Math.max(0, 1 - f * f));
+            ctx.beginPath();
+            ctx.moveTo(top.sx - xSpan, top.sy + yOff);
+            ctx.lineTo(top.sx + xSpan, top.sy + yOff);
+            ctx.stroke();
+          }
+
+          // Top & bottom black wooden caps
+          const capW = rw * 1.15;
+          const capH = Math.max(3, rh * 0.18);
+          ctx.fillStyle = '#18131A';
+          ctx.fillRect(top.sx - capW * 0.5, top.sy - rh - capH * 0.3, capW, capH);
+          ctx.fillRect(top.sx - capW * 0.5, top.sy + rh - capH * 0.7, capW, capH);
+
+          // Vertical calligraphy brush stroke & red seal stamp (like image 1)
+          if (rw > 10) {
+            ctx.strokeStyle = l.lit ? '#1C1613' : '#2C2F3A';
+            ctx.lineWidth = Math.max(1.5, rw * 0.14);
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(top.sx, top.sy - rh * 0.52);
+            ctx.lineTo(top.sx - rw * 0.12, top.sy);
+            ctx.lineTo(top.sx + rw * 0.08, top.sy + rh * 0.52);
+            ctx.stroke();
+            // Red seal stamp
+            ctx.fillStyle = l.lit ? '#C8102E' : '#6A3844';
+            ctx.fillRect(top.sx - rw * 0.52, top.sy - rh * 0.1, Math.max(3, rw * 0.22), Math.max(5, rh * 0.32));
+          }
 
           if (!l.lit) {
             // Torn paper zig-zag crack on unlit lantern (non-color cue)
             ctx.strokeStyle = '#1B2350';
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 1.6;
             ctx.beginPath();
-            ctx.moveTo(top.sx - bw * 0.25, top.sy - bh * 0.25);
-            ctx.lineTo(top.sx + bw * 0.1, top.sy);
-            ctx.lineTo(top.sx - bw * 0.15, top.sy + bh * 0.25);
+            ctx.moveTo(top.sx - rw * 0.25, top.sy - rh * 0.25);
+            ctx.lineTo(top.sx + rw * 0.15, top.sy);
+            ctx.lineTo(top.sx - rw * 0.15, top.sy + rh * 0.28);
             ctx.stroke();
           } else {
             // Fuel bar above lit lantern
-            const barW = Math.max(36, bw * 1.6);
+            const barW = Math.max(38, rw * 2.1);
             const barH = 5;
             const bx = top.sx - barW / 2;
-            const by = top.sy - bh * 0.85 - 14;
+            const by = top.sy - rh - 18;
             ctx.fillStyle = 'rgba(14,20,48,0.85)';
             ctx.fillRect(bx, by, barW, barH);
             ctx.fillStyle = isLowFuel ? (blinkOff ? '#FFFFFF' : '#FF5A5F') : '#FFE9B0';
@@ -788,7 +927,7 @@
           ctx.font = 'bold 11px sans-serif';
           ctx.textAlign = 'center';
           const cost = l.ever_lit ? 5 : 10;
-          ctx.fillText(l.lit ? `${l.id} (${Math.round(fuelPct * 100)}%)` : `${l.id} (${l.deposited}/${cost})`, top.sx, top.sy - bh * 0.85);
+          ctx.fillText(l.lit ? `${l.id} (${Math.round(fuelPct * 100)}%)` : `${l.id} (${l.deposited}/${cost})`, top.sx, top.sy - rh - 24);
         }
       });
     }
@@ -871,45 +1010,102 @@
       });
     }
 
-    // Player Mây (#E8E2D0 outfit, #C8102E scarf, conical hat + mini lantern)
+    // Player Mây — Teru Teru Bozu (Con ma cầu mưa) wearing Nón lá with hanging mini lantern (reference image 2)
     const pPr = cam.project(world.player.pos[0], world.player.pos[1] + 0.8, world.player.pos[2]);
     if (pPr) {
       drawables.push({
         zCam: pPr.zCam,
         draw: () => {
           const [px, py, pz] = world.player.pos;
-          const feet = cam.project(px, py, pz);
-          const head = cam.project(px, py + 1.5, pz);
-          const tip = cam.project(px, py + 2.15, pz);
-          if (!feet || !head || !tip) return;
+          const hoverBob = Math.sin(now * 0.005) * 0.06;
+          const feet = cam.project(px, py + hoverBob, pz);
+          const neck = cam.project(px, py + 1.15 + hoverBob, pz);
+          const head = cam.project(px, py + 1.52 + hoverBob, pz);
+          const tip = cam.project(px, py + 2.28 + hoverBob, pz);
+          if (!feet || !neck || !head || !tip) return;
           if (world.player.invuln_ticks > 0 && Math.floor(world.player.invuln_ticks / 4) % 2 === 1) return;
           const s = head.scale;
-          const cw = Math.max(9, 0.9 * s);
-          ctx.fillStyle = '#E8E2D0';
-          ctx.strokeStyle = '#C8102E';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(head.sx, head.sy);
-          ctx.lineTo(feet.sx - cw * 0.7, feet.sy);
-          ctx.lineTo(feet.sx + cw * 0.7, feet.sy);
-          ctx.closePath();
-          ctx.fill(); ctx.stroke();
 
-          // Nón lá
-          const hw = Math.max(13, 1.4 * s);
-          ctx.fillStyle = '#C9B48A';
+          // Flowing white cloth robe (Teru Teru Bozu flared skirt with soft folds)
+          const cw = Math.max(12, 1.15 * s);
+          const sway = Math.sin(now * 0.006) * (cw * 0.12);
+          const robeGrad = ctx.createLinearGradient(neck.sx, neck.sy, feet.sx, feet.sy);
+          robeGrad.addColorStop(0, '#FFFFFF');
+          robeGrad.addColorStop(0.7, '#F2EFE6');
+          robeGrad.addColorStop(1, '#D9D3C5');
+          ctx.fillStyle = robeGrad;
+          ctx.strokeStyle = '#C9C2B2';
+          ctx.lineWidth = 1.6;
           ctx.beginPath();
-          ctx.moveTo(tip.sx, tip.sy);
-          ctx.lineTo(head.sx - hw * 0.75, head.sy + 3);
-          ctx.lineTo(head.sx + hw * 0.75, head.sy + 3);
+          ctx.moveTo(neck.sx - cw * 0.25, neck.sy);
+          ctx.quadraticCurveTo(feet.sx - cw * 0.75, (neck.sy + feet.sy) * 0.55, feet.sx - cw + sway, feet.sy - 2);
+          ctx.quadraticCurveTo(feet.sx - cw * 0.45, feet.sy + 6, feet.sx + sway * 0.5, feet.sy - 1);
+          ctx.quadraticCurveTo(feet.sx + cw * 0.45, feet.sy + 6, feet.sx + cw + sway, feet.sy - 2);
+          ctx.quadraticCurveTo(feet.sx + cw * 0.75, (neck.sy + feet.sy) * 0.55, neck.sx + cw * 0.25, neck.sy);
           ctx.closePath();
           ctx.fill();
+          ctx.stroke();
 
-          // Mini lantern on brim
-          const mini = cam.project(px + Math.sin(world.player.facing_yaw_rad) * 0.65, py + 1.4, pz + Math.cos(world.player.facing_yaw_rad) * 0.65);
+          // Red neck ribbon / scarf (#C8102E)
+          ctx.strokeStyle = '#C8102E';
+          ctx.lineWidth = Math.max(2.5, 0.2 * s);
+          ctx.beginPath();
+          ctx.moveTo(neck.sx - cw * 0.28, neck.sy);
+          ctx.lineTo(neck.sx + cw * 0.28, neck.sy);
+          ctx.stroke();
+
+          // Round white Teru Teru Bozu head
+          const headR = Math.max(8, 0.52 * s);
+          ctx.fillStyle = '#FFFDF9';
+          ctx.strokeStyle = '#D8D2C5';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.arc(head.sx, head.sy, headR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Cute blushing cheeks, black eyes & smile (facing camera or player direction)
+          ctx.fillStyle = 'rgba(244, 140, 155, 0.75)';
+          ctx.beginPath();
+          ctx.arc(head.sx - headR * 0.48, head.sy + headR * 0.16, headR * 0.2, 0, Math.PI * 2);
+          ctx.arc(head.sx + headR * 0.48, head.sy + headR * 0.16, headR * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#1E1918';
+          ctx.beginPath();
+          ctx.arc(head.sx - headR * 0.32, head.sy - headR * 0.05, Math.max(1.5, headR * 0.13), 0, Math.PI * 2);
+          ctx.arc(head.sx + headR * 0.32, head.sy - headR * 0.05, Math.max(1.5, headR * 0.13), 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#1E1918';
+          ctx.lineWidth = Math.max(1.2, headR * 0.09);
+          ctx.beginPath();
+          ctx.arc(head.sx, head.sy + headR * 0.12, headR * 0.28, 0.15 * Math.PI, 0.85 * Math.PI);
+          ctx.stroke();
+
+          // Nón lá on top of Teru Teru Bozu head
+          const hw = Math.max(14, 1.35 * s);
+          ctx.fillStyle = '#C9B48A';
+          ctx.strokeStyle = '#8C6E3F';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(tip.sx, tip.sy);
+          ctx.lineTo(head.sx - hw * 0.78, head.sy - headR * 0.42);
+          ctx.quadraticCurveTo(head.sx, head.sy - headR * 0.15, head.sx + hw * 0.78, head.sy - headR * 0.42);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Mini hanging lantern on Nón lá brim (PRD-0)
+          const mini = cam.project(px + Math.sin(world.player.facing_yaw_rad) * 0.65, py + 1.48 + hoverBob, pz + Math.cos(world.player.facing_yaw_rad) * 0.65);
           if (mini) {
-            ctx.fillStyle = '#FFE9B0';
-            ctx.beginPath(); ctx.arc(mini.sx, mini.sy, Math.max(3, 0.25 * mini.scale), 0, Math.PI * 2); ctx.fill();
+            const mr = Math.max(3.5, 0.26 * mini.scale);
+            const mg = ctx.createRadialGradient(mini.sx, mini.sy, 1, mini.sx, mini.sy, mr * 2.5);
+            mg.addColorStop(0, '#FFFDF0');
+            mg.addColorStop(0.5, '#FFE9B0');
+            mg.addColorStop(1, 'rgba(255, 179, 71, 0)');
+            ctx.fillStyle = mg;
+            ctx.beginPath(); ctx.arc(mini.sx, mini.sy, mr * 2.5, 0, Math.PI * 2); ctx.fill();
           }
         }
       });
