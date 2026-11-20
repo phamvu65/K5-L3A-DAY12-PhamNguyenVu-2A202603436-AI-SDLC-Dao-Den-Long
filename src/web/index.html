@@ -29,8 +29,11 @@
       background: var(--color-sky);
       font-family: var(--font-sans);
       color: var(--color-ui-text);
-      font-size: 16px;
+      font-size: 18px;
     }
+    body.large-text { font-size: 22.5px; }
+    body.large-text .stat-label { font-size: 15px; }
+    body.large-text .hud-controls-mini { font-size: 15px; }
 
     #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
 
@@ -262,7 +265,8 @@
       <p>Hành trình 3 Đêm qua Đảo Bến, Đảo Cau và Đảo Chuông để xua tan sương đen.</p>
       <div class="btn-stack">
         <button id="btn-start-campaign" class="btn-primary" type="button">Bắt Đầu Hành Trình (3 Đêm)</button>
-        <button id="btn-open-settings-menu" class="btn-secondary" type="button">Cài Đặt</button>
+        <button id="btn-open-leaderboard" class="btn-secondary" type="button">Bảng Xếp Hạng</button>
+        <button id="btn-open-settings-menu" class="btn-secondary" type="button">Cài Đặt & Tiếp Cận</button>
       </div>
     </div>
   </div>
@@ -290,10 +294,10 @@
     </div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Settings & Accessibility Modal -->
   <div id="screen-settings" class="screen-overlay">
-    <div class="panel-box">
-      <h2>Cài Đặt</h2>
+    <div class="panel-box" style="max-width:600px;max-height:90vh;overflow-y:auto">
+      <h2>Cài Đặt & Dễ Tiếp Cận</h2>
       <div class="setting-row">
         <label for="opt-volume">Âm lượng (<span id="opt-vol-val">70%</span>)</label>
         <input id="opt-volume" type="range" min="0" max="100" value="70" />
@@ -306,7 +310,30 @@
         <label for="opt-colorblind">Bảng màu dễ phân biệt (Mù màu)</label>
         <input id="opt-colorblind" type="checkbox" style="width:20px;height:20px;accent-color:var(--color-gold)" />
       </div>
-      <button id="btn-close-settings" class="btn-primary" type="button">Lưu & Đóng</button>
+      <div class="setting-row">
+        <label for="opt-reduce-motion">Giảm chuyển động (Tắt rung & chớp)</label>
+        <input id="opt-reduce-motion" type="checkbox" style="width:20px;height:20px;accent-color:var(--color-gold)" />
+      </div>
+      <div class="setting-row">
+        <label for="opt-large-text">Cỡ chữ lớn (×1.25)</label>
+        <input id="opt-large-text" type="checkbox" style="width:20px;height:20px;accent-color:var(--color-gold)" />
+      </div>
+      <div style="text-align:left;margin:14px 0 8px;font-weight:700;color:var(--color-gold)">Đổi phím điều khiển:</div>
+      <div id="keybind-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"></div>
+      <div id="keybind-warning" style="color:var(--color-danger);font-size:14px;min-height:20px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button id="btn-reset-keys" class="btn-secondary" type="button" style="min-width:180px">Khôi Phục Mặc Định</button>
+        <button id="btn-close-settings" class="btn-primary" type="button" style="min-width:180px">Lưu & Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div id="screen-leaderboard" class="screen-overlay">
+    <div class="panel-box" style="max-width:580px">
+      <h2>Bảng Xếp Hạng Cục Bộ (Top 10)</h2>
+      <div id="leaderboard-table" style="text-align:left;margin:14px 0 20px;font-size:15px"></div>
+      <button id="btn-close-leaderboard" class="btn-primary" type="button">Đóng</button>
     </div>
   </div>
 
@@ -315,8 +342,13 @@
     <div class="panel-box">
       <h1 id="result-title">Đêm Đã Sáng!</h1>
       <p id="result-desc">...</p>
-      <div style="font-family:var(--font-display);font-size:24px;color:var(--color-gold);margin-bottom:22px">
+      <div style="font-family:var(--font-display);font-size:24px;color:var(--color-gold);margin-bottom:18px">
         Điểm Đêm: <span id="result-night-score">0</span> · Tổng Điểm: <span id="result-total-score">0</span>
+      </div>
+      <div id="save-score-box" style="display:none;margin-bottom:18px">
+        <input id="lb-name-input" type="text" maxlength="12" placeholder="Nhập tên (3–12 ký tự)" style="padding:10px 14px;border-radius:10px;border:1px solid var(--color-gold);background:rgba(0,0,0,0.4);color:#fff;font-size:16px;width:220px" />
+        <button id="btn-save-score" class="btn-secondary" type="button" style="min-width:110px;margin-left:6px">Lưu Điểm</button>
+        <div id="lb-save-msg" style="font-size:13px;color:var(--color-gold);margin-top:6px"></div>
       </div>
       <div class="btn-stack">
         <button id="btn-next-or-retry" class="btn-primary" type="button">Sang Đêm Kế Tiếp</button>

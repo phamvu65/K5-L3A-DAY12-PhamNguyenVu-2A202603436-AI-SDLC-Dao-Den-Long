@@ -1,5 +1,11 @@
 # Changelog — Đảo Đèn Lồng
 
+## [v1.0.0 / Phase 4] — Contract v1.3 (Ticket-04: Bình minh v1.0.0)
+- **Benchmark (`src/bench.js`) & Soak Test (`src/soak.js`):** Đo hiệu năng cảnh chuẩn 200 Bóng Mực + 100 đom đóm và kiểm tra ổn định bộ nhớ 10 Đêm liên tiếp (`bench.json`, `soak.json`).
+- **Bảng xếp hạng cục bộ (`leaderboard.json`):** Lưu top 10, hỗ trợ nhập tên sau khi thắng Đêm 3 hoặc thua, và lệnh `node src/server.js --export-leaderboard out.json`.
+- **Dễ tiếp cận (Accessibility):** Đổi phím đầy đủ có cảnh báo trùng + khôi phục mặc định, phụ đề/chỉ báo hình ảnh, giảm chuyển động, cỡ chữ tối thiểu 18px + tùy chọn chữ lớn ×1.25.
+- **Đóng gói phát hành:** Hoàn thiện `README.md`, `retro.md`, `PROOF.md` và GitHub Release `v1.0.0`.
+
 ## [Phase 3] — Contract v1.2 (Ticket-03: Đèn cạn dầu)
 ### Breaking Changes (Thay đổi phá vỡ tương thích)
 - **Loại bỏ thắng sớm `all_lit`:** Thắp đủ đèn không còn kết thúc Đêm ngay lập tức. Lý do kết thúc thắng đổi thành `dawn_survived` khi hết giờ với `>= ceil(0.6 * tổng đèn)` đèn đang sáng.

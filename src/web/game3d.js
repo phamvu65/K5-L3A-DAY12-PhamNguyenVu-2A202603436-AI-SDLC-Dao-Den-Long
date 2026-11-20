@@ -29,14 +29,45 @@
   const screenIntro = document.getElementById('screen-intro');
   const screenPause = document.getElementById('screen-pause');
   const screenSettings = document.getElementById('screen-settings');
+  const screenLeaderboard = document.getElementById('screen-leaderboard');
   const screenResult = document.getElementById('screen-result');
+
+  const DEFAULT_KEYS = {
+    up: 'KeyW',
+    down: 'KeyS',
+    left: 'KeyA',
+    right: 'KeyD',
+    jump: 'Space',
+    dash: 'ShiftLeft',
+    interact: 'KeyE',
+    pulse: 'KeyF',
+    pause: 'KeyP'
+  };
+  const KEY_LABELS = {
+    up: 'Tiến',
+    down: 'Lùi',
+    left: 'Trái',
+    right: 'Phải',
+    jump: 'Nhảy',
+    dash: 'Lướt',
+    interact: 'Nạp đèn',
+    pulse: 'Tỏa Sáng',
+    pause: 'Tạm dừng'
+  };
 
   // Settings
   const SETTINGS_KEY = 'dao_den_long_settings_v1';
-  let settings = { volume: 0.7, mouseSens: 1.0, colorblind: false };
+  let settings = {
+    volume: 0.7,
+    mouseSens: 1.0,
+    colorblind: false,
+    reduceMotion: false,
+    largeText: false,
+    keybinds: { ...DEFAULT_KEYS }
+  };
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-    if (saved) settings = { ...settings, ...saved };
+    if (saved) settings = { ...settings, ...saved, keybinds: { ...DEFAULT_KEYS, ...(saved.keybinds || {}) } };
   } catch (_) {}
 
   const optVolume = document.getElementById('opt-volume');
@@ -44,6 +75,8 @@
   const optSens = document.getElementById('opt-sens');
   const optSensVal = document.getElementById('opt-sens-val');
   const optColorblind = document.getElementById('opt-colorblind');
+  const optReduceMotion = document.getElementById('opt-reduce-motion');
+  const optLargeText = document.getElementById('opt-large-text');
 
   optVolume.value = Math.round(settings.volume * 100);
   optVolVal.textContent = `${optVolume.value}%`;
@@ -55,6 +88,57 @@
     optColorblind.addEventListener('change', () => {
       settings.colorblind = optColorblind.checked;
       document.body.classList.toggle('colorblind-mode', settings.colorblind);
+    });
+  }
+  if (optReduceMotion) {
+    optReduceMotion.checked = Boolean(settings.reduceMotion);
+    optReduceMotion.addEventListener('change', () => { settings.reduceMotion = optReduceMotion.checked; });
+  }
+  if (optLargeText) {
+    optLargeText.checked = Boolean(settings.largeText);
+    document.body.classList.toggle('large-text', settings.largeText);
+    optLargeText.addEventListener('change', () => {
+      settings.largeText = optLargeText.checked;
+      document.body.classList.toggle('large-text', settings.largeText);
+    });
+  }
+
+  let listeningAction = null;
+  const keybindListEl = document.getElementById('keybind-list');
+  const keybindWarnEl = document.getElementById('keybind-warning');
+
+  function renderKeybinds() {
+    if (!keybindListEl) return;
+    keybindListEl.innerHTML = '';
+    for (const action of Object.keys(DEFAULT_KEYS)) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-secondary';
+      btn.style.minWidth = 'auto';
+      btn.style.minHeight = '36px';
+      btn.style.padding = '4px 10px';
+      btn.style.fontSize = '13px';
+      btn.textContent =
+        listeningAction === action
+          ? `${KEY_LABELS[action]}: [Nhấn phím...]`
+          : `${KEY_LABELS[action]}: ${settings.keybinds[action]}`;
+      btn.onclick = () => {
+        listeningAction = action;
+        keybindWarnEl.textContent = '';
+        renderKeybinds();
+      };
+      keybindListEl.appendChild(btn);
+    }
+  }
+  renderKeybinds();
+
+  const btnResetKeys = document.getElementById('btn-reset-keys');
+  if (btnResetKeys) {
+    btnResetKeys.addEventListener('click', () => {
+      settings.keybinds = { ...DEFAULT_KEYS };
+      listeningAction = null;
+      keybindWarnEl.textContent = '';
+      renderKeybinds();
     });
   }
 
@@ -129,7 +213,44 @@
   resize();
 
   function hideAllScreens() {
-    [screenMenu, screenIntro, screenPause, screenSettings, screenResult].forEach(el => el.classList.remove('visible'));
+    [screenMenu, screenIntro, screenPause, screenSettings, screenLeaderboard, screenResult].forEach(el => {
+      if (el) el.classList.remove('visible');
+    });
+  }
+
+  function loadLeaderboardUI() {
+    const tbl = document.getElementById('leaderboard-table');
+    if (!tbl) return;
+    tbl.innerHTML = 'Đang tải...';
+    fetch('/api/leaderboard')
+      .then(r => r.json())
+      .then(data => {
+        const list = data.entries || [];
+        if (list.length === 0) {
+          tbl.innerHTML = '<div style="text-align:center;color:var(--color-muted)">Chưa có kỷ lục nào. Hãy chơi để ghi danh!</div>';
+          return;
+        }
+        tbl.innerHTML = list
+          .map((e, i) => `<div style="display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.1)"><span>#${i + 1} <strong>${e.name}</strong> (Đêm thắng: ${e.nights_won}/3)</span><span style="color:var(--color-gold);font-weight:700">${e.score}</span></div>`)
+          .join('');
+      })
+      .catch(() => { tbl.innerHTML = 'Không tải được bảng xếp hạng.'; });
+  }
+
+  const btnOpenLb = document.getElementById('btn-open-leaderboard');
+  if (btnOpenLb) {
+    btnOpenLb.addEventListener('click', () => {
+      hideAllScreens();
+      screenLeaderboard.classList.add('visible');
+      loadLeaderboardUI();
+    });
+  }
+  const btnCloseLb = document.getElementById('btn-close-leaderboard');
+  if (btnCloseLb) {
+    btnCloseLb.addEventListener('click', () => {
+      hideAllScreens();
+      screenMenu.classList.add('visible');
+    });
   }
 
   function showIntro(night) {
@@ -212,12 +333,26 @@
 
   window.addEventListener('keydown', e => {
     const code = e.code;
+    if (listeningAction) {
+      e.preventDefault();
+      const dup = Object.entries(settings.keybinds).find(([act, k]) => act !== listeningAction && k === code);
+      if (dup) {
+        keybindWarnEl.textContent = `⚠ Phím ${code} đã được gán cho "${KEY_LABELS[dup[0]]}"!`;
+      } else {
+        settings.keybinds[listeningAction] = code;
+        keybindWarnEl.textContent = '';
+      }
+      listeningAction = null;
+      renderKeybinds();
+      return;
+    }
     if (!keys[code]) {
-      if (code === 'Space') edgeQueue.jump = true;
-      if (code === 'KeyE') edgeQueue.interact = true;
-      if (code === 'KeyF') edgeQueue.pulse = true;
-      if (code === 'ShiftLeft' || code === 'ShiftRight') edgeQueue.dash = true;
-      if (code === 'Escape' || code === 'KeyP') togglePause();
+      const kb = settings.keybinds;
+      if (code === kb.jump) edgeQueue.jump = true;
+      if (code === kb.interact) edgeQueue.interact = true;
+      if (code === kb.pulse) edgeQueue.pulse = true;
+      if (code === kb.dash || code === 'ShiftRight') edgeQueue.dash = true;
+      if (code === kb.pause || code === 'Escape') togglePause();
     }
     keys[code] = true;
   });
@@ -235,6 +370,7 @@
     camPitchDeg = Math.max(12, Math.min(55, camPitchDeg + dy * 0.25 * settings.mouseSens));
   });
 
+  let nightsWonCount = 0;
   function showResult(result, reason) {
     inGameplay = false;
     hideAllScreens();
@@ -242,33 +378,72 @@
     const titleEl = document.getElementById('result-title');
     const descEl = document.getElementById('result-desc');
     const btnNext = document.getElementById('btn-next-or-retry');
+    const saveBox = document.getElementById('save-score-box');
+    const saveMsg = document.getElementById('lb-save-msg');
+    if (saveMsg) saveMsg.textContent = '';
 
     if (result === 'won') {
       totalCampaignScore += world.score;
+      nightsWonCount = Math.max(nightsWonCount, currentNight);
       playChord([0, 2, 4, 5, 7]);
       if (currentNight < 3) {
+        if (saveBox) saveBox.style.display = 'none';
         titleEl.textContent = `Đêm ${currentNight} Hoàn Thành!`;
-        descEl.textContent = `Mây đã thắp sáng toàn bộ Đèn Lồng Lớn của ${world.map.name}.`;
+        descEl.textContent = `Mây đã giữ sáng đảo tới bình minh trên ${world.map.name}.`;
         btnNext.textContent = `Sang Đêm ${currentNight + 1}`;
         btnNext.onclick = () => showIntro(currentNight + 1);
       } else {
+        if (saveBox) saveBox.style.display = 'block';
         titleEl.textContent = 'BÌNH MINH ĐÃ LÊN!';
         descEl.textContent = 'Chúc mừng! Mây đã thắp sáng cả ba hòn đảo và xua tan hoàn toàn sương đen!';
         btnNext.textContent = 'Chơi Lại Từ Đêm 1';
         btnNext.onclick = () => {
           totalCampaignScore = 0;
+          nightsWonCount = 0;
           showIntro(1);
         };
       }
     } else {
       playChord([4, 2, 0]);
+      if (saveBox) saveBox.style.display = 'block';
       titleEl.textContent = 'Sương Đen Bao Phủ...';
-      descEl.textContent = reason === 'dawn' ? 'Đã hết thời gian trước khi thắp đủ đèn.' : 'Ngọn lửa hộ mệnh của Mây đã tắt.';
+      descEl.textContent = reason === 'dawn' ? 'Đã hết thời gian mà số đèn sáng chưa đạt ngưỡng.' : 'Ngọn lửa hộ mệnh của Mây đã tắt.';
       btnNext.textContent = `Chơi Lại Đêm ${currentNight}`;
       btnNext.onclick = () => startNight(currentNight);
     }
     document.getElementById('result-night-score').textContent = String(world.score);
     document.getElementById('result-total-score').textContent = String(totalCampaignScore);
+  }
+
+  const btnSaveScore = document.getElementById('btn-save-score');
+  if (btnSaveScore) {
+    btnSaveScore.addEventListener('click', () => {
+      const nameInput = document.getElementById('lb-name-input');
+      const saveMsg = document.getElementById('lb-save-msg');
+      const rawName = (nameInput ? nameInput.value : '').trim();
+      if (rawName.length < 3 || rawName.length > 12) {
+        saveMsg.textContent = '⚠ Tên phải từ 3 đến 12 ký tự!';
+        return;
+      }
+      fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: rawName,
+          score: totalCampaignScore,
+          nights_won: nightsWonCount,
+          achieved_at: new Date().toISOString(),
+          seed: world ? world.seed : 1
+        })
+      })
+        .then(r => {
+          if (!r.ok) throw new Error('Lỗi lưu');
+          saveMsg.textContent = '✅ Đã lưu điểm vào Bảng Xếp Hạng!';
+        })
+        .catch(() => {
+          saveMsg.textContent = '⚠ Không lưu được điểm.';
+        });
+    });
   }
 
   let lastCountdownSec = -1;
@@ -786,10 +961,11 @@
       acc -= 1000 / 60;
       if (inGameplay && world && world.state === 'playing') {
         let mx = 0, mz = 0;
-        if (keys['KeyW'] || keys['ArrowUp']) mz += 1;
-        if (keys['KeyS'] || keys['ArrowDown']) mz -= 1;
-        if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
-        if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+        const kb = settings.keybinds;
+        if (keys[kb.up] || keys['ArrowUp']) mz += 1;
+        if (keys[kb.down] || keys['ArrowDown']) mz -= 1;
+        if (keys[kb.right] || keys['ArrowRight']) mx += 1;
+        if (keys[kb.left] || keys['ArrowLeft']) mx -= 1;
 
         if (edgeQueue.jump && world.player.grounded) playTone(440, 0.15, 'sine', 0.1);
         const events = world.step({

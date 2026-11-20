@@ -44,9 +44,11 @@ function test(name, fn) {
 
 console.log('=== Running Đảo Đèn Lồng Phase 3 Test Suite (Contract v1.2) ===');
 
-// 1. Contract v1.2 schema & tuning
-test('Contract v1.2 schema & Ticket-03 fuel/score tuning values', () => {
-  assert.strictEqual(contract.contract_version, '1.2');
+// 1. Contract v1.3 schema & tuning
+test('Contract v1.3 schema & Ticket-03/04 tuning, bench_cmd, soak_cmd', () => {
+  assert.strictEqual(contract.contract_version, '1.3');
+  assert.ok(contract.bench_cmd);
+  assert.ok(contract.soak_cmd);
   const t = contract.tuning;
   assert.strictEqual(t.fuel_max, 100);
   assert.strictEqual(t.fuel_decay_per_s, 1.0);
@@ -261,6 +263,36 @@ test('[Phase 3] Determinism: Two runs with same --seed produce 100% identical JS
   runHeadless(['--seed', '999', '--night', '1', '--ticks', '600', '--out', out1, '--snapshot-every', '60']);
   runHeadless(['--seed', '999', '--night', '1', '--ticks', '600', '--out', out2, '--snapshot-every', '60']);
   assert.strictEqual(fs.readFileSync(out1, 'utf8'), fs.readFileSync(out2, 'utf8'));
+});
+
+// 9. [Phase 4] Benchmark & Soak outputs meet thresholds
+test('[Phase 4] bench.json & soak.json exist and meet Ticket-04 thresholds', () => {
+  const benchPath = path.resolve(__dirname, '..', 'bench.json');
+  const soakPath = path.resolve(__dirname, '..', 'soak.json');
+  assert.ok(fs.existsSync(benchPath), 'bench.json missing');
+  assert.ok(fs.existsSync(soakPath), 'soak.json missing');
+
+  const bench = JSON.parse(fs.readFileSync(benchPath, 'utf8'));
+  assert.strictEqual(bench.contract_version, '1.3');
+  assert.ok(bench.avg_fps >= 60, `avg_fps < 60: ${bench.avg_fps}`);
+  assert.ok(bench.p1_low_fps >= 30, `p1_low_fps < 30: ${bench.p1_low_fps}`);
+  assert.ok(bench.load_ms <= 10000, `load_ms > 10000: ${bench.load_ms}`);
+
+  const soak = JSON.parse(fs.readFileSync(soakPath, 'utf8'));
+  assert.strictEqual(soak.nights, 10);
+  assert.strictEqual(soak.crashes, 0);
+  assert.ok(soak.mem_end_mb <= 1.2 * soak.mem_start_mb, `mem_end_mb > 1.2 * mem_start_mb`);
+});
+
+// 10. [Phase 4] --export-leaderboard CLI
+test('[Phase 4] --export-leaderboard exports valid sorted JSON', () => {
+  const outLb = path.join(TMP_DIR, 'exported_lb.json');
+  const res = spawnSync(process.execPath, [path.resolve(__dirname, '..', 'src', 'server.js'), '--export-leaderboard', outLb], {
+    encoding: 'utf8'
+  });
+  assert.strictEqual(res.status, 0);
+  const data = JSON.parse(fs.readFileSync(outLb, 'utf8'));
+  assert.ok(Array.isArray(data.entries));
 });
 
 const failed = results.filter(r => r.status === 'FAIL');

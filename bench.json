@@ -1,0 +1,12 @@
+{
+  "contract_version": "1.3",
+  "avg_fps": 124.6,
+  "p1_low_fps": 103,
+  "frame_ms_p95": 8.01,
+  "frames": 3740,
+  "load_ms": 4,
+  "peak_mem_mb": 44,
+  "vsync_off": true,
+  "renderer": "Node.js v24.11.1 3D Projection Bench (1280x720)",
+  "os": "win32 10.0.26200 (x64)"
+}
