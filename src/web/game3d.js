@@ -33,7 +33,7 @@
 
   // Settings
   const SETTINGS_KEY = 'dao_den_long_settings_v1';
-  let settings = { volume: 0.7, mouseSens: 1.0 };
+  let settings = { volume: 0.7, mouseSens: 1.0, colorblind: false };
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
     if (saved) settings = { ...settings, ...saved };
@@ -43,11 +43,20 @@
   const optVolVal = document.getElementById('opt-vol-val');
   const optSens = document.getElementById('opt-sens');
   const optSensVal = document.getElementById('opt-sens-val');
+  const optColorblind = document.getElementById('opt-colorblind');
 
   optVolume.value = Math.round(settings.volume * 100);
   optVolVal.textContent = `${optVolume.value}%`;
   optSens.value = Math.round(settings.mouseSens * 10);
   optSensVal.textContent = `${settings.mouseSens.toFixed(1)}x`;
+  if (optColorblind) {
+    optColorblind.checked = Boolean(settings.colorblind);
+    document.body.classList.toggle('colorblind-mode', settings.colorblind);
+    optColorblind.addEventListener('change', () => {
+      settings.colorblind = optColorblind.checked;
+      document.body.classList.toggle('colorblind-mode', settings.colorblind);
+    });
+  }
 
   optVolume.addEventListener('input', () => {
     settings.volume = Number(optVolume.value) / 100;
@@ -293,8 +302,8 @@
     hudLanterns.textContent = `${litCount} / ${world.lanterns.length}`;
     hudScore.textContent = String(totalCampaignScore + world.score);
 
-    // 10-slot Firefly Bar
-    const cap = tuning.carry_capacity || 10;
+    // Dynamic Firefly Bar (10..20)
+    const cap = world.getCarryCapacity();
     hudCarriedNum.textContent = `${world.player.carried}/${cap}`;
     let slotsHtml = '';
     for (let i = 0; i < cap; i++) {
@@ -340,10 +349,11 @@
       windBanner.style.display = 'none';
     }
 
-    // Prompt banner near unlit lantern
+    // Prompt banner near unlit or refuelable lantern
     let nearL = null;
     for (const l of world.lanterns) {
-      if (l.lit) continue;
+      const canAccept = !l.lit || (l.lit && l.fuel_ticks < world.fuelMaxTicks);
+      if (!canAccept) continue;
       if (Math.hypot(world.player.pos[0] - l.pos[0], world.player.pos[2] - l.pos[2]) <= tuning.interact_radius) {
         nearL = l;
         break;
@@ -351,7 +361,12 @@
     }
     if (nearL && world.state === 'playing') {
       promptBanner.style.display = 'block';
-      promptBanner.textContent = `E — Nạp ánh sáng (${nearL.deposited}/${tuning.lantern_cost})`;
+      if (!nearL.lit) {
+        const cost = nearL.ever_lit ? (tuning.relight_cost || 5) : (tuning.lantern_cost || 10);
+        promptBanner.textContent = `E — ${nearL.ever_lit ? 'Thắp lại' : 'Nạp ánh sáng'} (${nearL.deposited}/${cost})`;
+      } else {
+        promptBanner.textContent = `E — Châm dầu ${nearL.id} (${Math.round(nearL.fuel_ticks / 60)}%)`;
+      }
     } else {
       promptBanner.style.display = 'none';
     }
@@ -562,16 +577,43 @@
             ctx.beginPath(); ctx.arc(top.sx, top.sy, Math.max(18, 3.5 * s), 0, Math.PI * 2); ctx.fill();
           }
 
-          const bw = Math.max(9, 1.0 * s), bh = Math.max(11, 1.2 * s);
-          ctx.fillStyle = l.lit ? '#FFB347' : '#5B5F6E';
+          const bw = Math.max(9, 1.0 * s);
+          const bh = Math.max(9, (l.lit ? 1.2 : 0.96) * s); // Unlit squashed 20%
+          const fuelPct = l.lit ? l.fuel_ticks / world.fuelMaxTicks : 0;
+          const isLowFuel = l.lit && fuelPct < 0.3;
+          const blinkOff = isLowFuel && Math.floor(now / 500) % 2 === 1;
+
+          ctx.fillStyle = l.lit ? (blinkOff ? '#A86E22' : '#FFB347') : '#5B5F6E';
           ctx.strokeStyle = l.lit ? '#FFE9B0' : '#8FA3B8';
           ctx.lineWidth = 1.6;
           ctx.beginPath(); ctx.roundRect(top.sx - bw / 2, top.sy - bh / 2, bw, bh, 4); ctx.fill(); ctx.stroke();
 
+          if (!l.lit) {
+            // Torn paper zig-zag crack on unlit lantern (non-color cue)
+            ctx.strokeStyle = '#1B2350';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(top.sx - bw * 0.25, top.sy - bh * 0.25);
+            ctx.lineTo(top.sx + bw * 0.1, top.sy);
+            ctx.lineTo(top.sx - bw * 0.15, top.sy + bh * 0.25);
+            ctx.stroke();
+          } else {
+            // Fuel bar above lit lantern
+            const barW = Math.max(36, bw * 1.6);
+            const barH = 5;
+            const bx = top.sx - barW / 2;
+            const by = top.sy - bh * 0.85 - 14;
+            ctx.fillStyle = 'rgba(14,20,48,0.85)';
+            ctx.fillRect(bx, by, barW, barH);
+            ctx.fillStyle = isLowFuel ? (blinkOff ? '#FFFFFF' : '#FF5A5F') : '#FFE9B0';
+            ctx.fillRect(bx, by, barW * Math.max(0, Math.min(1, fuelPct)), barH);
+          }
+
           ctx.fillStyle = '#F5F1E6';
           ctx.font = 'bold 11px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(l.lit ? `${l.id} ★` : `${l.id} (${l.deposited}/10)`, top.sx, top.sy - bh * 0.8);
+          const cost = l.ever_lit ? 5 : 10;
+          ctx.fillText(l.lit ? `${l.id} (${Math.round(fuelPct * 100)}%)` : `${l.id} (${l.deposited}/${cost})`, top.sx, top.sy - bh * 0.85);
         }
       });
     }
@@ -612,7 +654,8 @@
       });
     }
 
-    // Shades (#120A1A body, #7A3CFF rim, #3A3450 stunned)
+    // Shades (#120A1A body, #7A3CFF or colorblind #00B3FF rim, #3A3450 stunned)
+    const shadeAccent = settings.colorblind ? '#00B3FF' : '#7A3CFF';
     for (const s of world.shades) {
       const pr = cam.project(s.pos[0], s.pos[1] + 0.85, s.pos[2]);
       if (!pr) continue;
@@ -622,10 +665,10 @@
           const stunned = s.state === 'stunned';
           const r = Math.max(8, 0.9 * pr.scale);
           ctx.fillStyle = stunned ? '#3A3450' : '#120A1A';
-          ctx.strokeStyle = stunned ? '#8FA3B8' : '#7A3CFF';
+          ctx.strokeStyle = stunned ? '#8FA3B8' : shadeAccent;
           ctx.lineWidth = 2.5;
           ctx.beginPath(); ctx.arc(pr.sx, pr.sy, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = stunned ? '#FFE58A' : '#7A3CFF';
+          ctx.fillStyle = stunned ? '#FFE58A' : shadeAccent;
           ctx.beginPath();
           ctx.arc(pr.sx - r * 0.3, pr.sy - r * 0.1, Math.max(2, r * 0.15), 0, Math.PI * 2);
           ctx.arc(pr.sx + r * 0.3, pr.sy - r * 0.1, Math.max(2, r * 0.15), 0, Math.PI * 2);

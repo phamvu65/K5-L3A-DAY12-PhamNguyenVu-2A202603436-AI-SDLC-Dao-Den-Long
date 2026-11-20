@@ -81,6 +81,12 @@
       color: var(--color-danger);
       animation: blinkPulse 0.8s infinite ease-in-out;
     }
+    body.colorblind-mode #hud-time.danger-blink {
+      color: #FFFFFF;
+    }
+    body.colorblind-mode #hud-time.danger-blink::before {
+      content: "⚠ ";
+    }
     @keyframes blinkPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
     .stat-label { font-size: 12px; color: var(--color-muted); font-weight: 600; }
@@ -295,6 +301,10 @@
       <div class="setting-row">
         <label for="opt-sens">Độ nhạy chuột (<span id="opt-sens-val">1.0x</span>)</label>
         <input id="opt-sens" type="range" min="3" max="25" value="10" />
+      </div>
+      <div class="setting-row">
+        <label for="opt-colorblind">Bảng màu dễ phân biệt (Mù màu)</label>
+        <input id="opt-colorblind" type="checkbox" style="width:20px;height:20px;accent-color:var(--color-gold)" />
       </div>
       <button id="btn-close-settings" class="btn-primary" type="button">Lưu & Đóng</button>
     </div>
