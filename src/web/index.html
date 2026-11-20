@@ -224,6 +224,11 @@
         <div class="stat-label">Tổng Điểm</div>
         <div class="stat-val" id="hud-score">0</div>
       </div>
+      <div style="display:flex;gap:4px;pointer-events:auto" aria-label="Chuyển màn nhanh">
+        <button class="btn-secondary btn-switch-night" data-night="1" type="button" style="min-width:44px;min-height:44px;padding:0 10px;font-size:13px">Đ1</button>
+        <button class="btn-secondary btn-switch-night" data-night="2" type="button" style="min-width:44px;min-height:44px;padding:0 10px;font-size:13px">Đ2</button>
+        <button class="btn-secondary btn-switch-night" data-night="3" type="button" style="min-width:44px;min-height:44px;padding:0 10px;font-size:13px">Đ3</button>
+      </div>
       <button id="btn-pause-hud" type="button" class="btn-secondary" style="min-width:44px;min-height:44px;padding:0 12px;pointer-events:auto" title="Tạm dừng (Esc/P)">⏸</button>
     </div>
   </header>
@@ -265,6 +270,11 @@
       <p>Hành trình 3 Đêm qua Đảo Bến, Đảo Cau và Đảo Chuông để xua tan sương đen.</p>
       <div class="btn-stack">
         <button id="btn-start-campaign" class="btn-primary" type="button">Bắt Đầu Hành Trình (3 Đêm)</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          <button class="btn-secondary btn-switch-night" data-night="1" type="button" style="min-width:135px;font-size:14px">Đêm 1: Đảo Bến</button>
+          <button class="btn-secondary btn-switch-night" data-night="2" type="button" style="min-width:135px;font-size:14px">Đêm 2: Đảo Cau</button>
+          <button class="btn-secondary btn-switch-night" data-night="3" type="button" style="min-width:135px;font-size:14px">Đêm 3: Đảo Chuông</button>
+        </div>
         <button id="btn-open-leaderboard" class="btn-secondary" type="button">Bảng Xếp Hạng</button>
         <button id="btn-open-settings-menu" class="btn-secondary" type="button">Cài Đặt & Tiếp Cận</button>
       </div>

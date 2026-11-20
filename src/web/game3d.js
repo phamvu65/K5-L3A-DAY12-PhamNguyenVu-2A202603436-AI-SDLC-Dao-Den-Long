@@ -283,6 +283,12 @@
     totalCampaignScore = 0;
     showIntro(1);
   });
+  document.querySelectorAll('.btn-switch-night').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetNight = Number(btn.getAttribute('data-night')) || 1;
+      startNight(targetNight);
+    });
+  });
   document.getElementById('btn-begin-night').addEventListener('click', () => startNight(currentNight));
   document.getElementById('btn-open-settings-menu').addEventListener('click', () => {
     settingsReturnTo = 'menu';
@@ -450,6 +456,11 @@
   function updateHUD() {
     if (!world) return;
     hudNightLabel.textContent = `Đêm ${world.night} · ${world.map.name}`;
+    document.querySelectorAll('#hud-top .btn-switch-night').forEach(btn => {
+      const n = Number(btn.getAttribute('data-night'));
+      btn.style.borderColor = n === world.night ? 'var(--color-gold)' : 'var(--color-border)';
+      btn.style.background = n === world.night ? 'rgba(242, 193, 78, 0.28)' : 'rgba(255, 255, 255, 0.08)';
+    });
 
     // Flames
     const maxFlames = tuning.flames || 3;
