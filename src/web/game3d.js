@@ -15,6 +15,10 @@
   const hudTime = document.getElementById('hud-time');
   const hudScore = document.getElementById('hud-score');
   const hudCreative = document.getElementById('hud-creative-status');
+  const islandLightBar = document.getElementById('island-light-bar');
+  const btnSoundToggle = document.getElementById('btn-sound-toggle');
+  const btnSoundLabel = document.getElementById('btn-sound-label');
+  const soundWavesIcon = document.getElementById('sound-waves-icon');
   const promptBanner = document.getElementById('prompt-banner');
   const overlay = document.getElementById('overlay');
   const modalTitle = document.getElementById('modal-title');
@@ -206,6 +210,13 @@
     startNewGame();
   });
 
+  if (btnSoundToggle) {
+    btnSoundToggle.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      updateHUD();
+    });
+  }
+
   window.__DAO_DEN_LONG__ = {
     getWorld: () => world,
     triggerWinDemo: () => {
@@ -236,6 +247,9 @@
           : 'Ngọn lửa hộ mệnh của Mây đã tắt trước Bóng Mực. Hãy thử lại nhé!';
       playChord([4, 2, 0]);
     }
+    setTimeout(() => {
+      if (btnRestart) btnRestart.focus();
+    }, 50);
   }
 
   function updateHUD() {
@@ -260,6 +274,15 @@
 
     const pct = Math.round((litCount / Math.max(1, world.lanterns.length)) * 100);
     hudCreative.textContent = `Độ sáng đảo: ${pct}% · Chuông gió: ${soundEnabled ? 'Bật' : 'Tắt'}`;
+    if (islandLightBar) {
+      islandLightBar.style.width = `${pct}%`;
+    }
+    if (btnSoundLabel) {
+      btnSoundLabel.textContent = `Chuông: ${soundEnabled ? 'Bật' : 'Tắt'}`;
+    }
+    if (soundWavesIcon) {
+      soundWavesIcon.style.display = soundEnabled ? 'inline' : 'none';
+    }
 
     // Check proximity to unlit lantern for prompt banner
     let nearLantern = null;

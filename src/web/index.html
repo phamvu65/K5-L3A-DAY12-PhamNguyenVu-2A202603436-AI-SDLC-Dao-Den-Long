@@ -5,177 +5,537 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Đảo Đèn Lồng — Đêm 1: Đảo Bến</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
     :root {
-      --amber: #ffb347;
-      --warm-gold: #ffd27f;
-      --ink-purple: #2d1b4e;
-      --ink-dark: #090614;
-      --panel-bg: rgba(15, 10, 28, 0.82);
+      /* UI/UX Pro Max Design Tokens — Đảo Đèn Lồng (Fairy-Tale Dark Glassmorphism) */
+      --color-primary: #FFB347;
+      --color-primary-glow: rgba(255, 179, 71, 0.45);
+      --color-warm-gold: #FFE28A;
+      --color-accent-violet: #A78BFA;
+      --color-danger-ink: #F43F5E;
+      --color-background: #090614;
+      --color-foreground: #F8F4EC;
+      --color-muted-foreground: #C8BCE0;
+      --color-card-glass: rgba(18, 12, 34, 0.76);
+      --color-card-border: rgba(255, 195, 105, 0.28);
+      --color-card-highlight: rgba(255, 255, 255, 0.12);
+      --blur-amount: 16px;
+      --font-display: 'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
+      --font-sans: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
     body, html {
-      width: 100%; height: 100%; overflow: hidden;
-      background: var(--ink-dark);
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      color: #fff6e5;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--color-background);
+      font-family: var(--font-sans);
+      color: var(--color-foreground);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
+
     #game-canvas {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       display: block;
+      z-index: 1;
     }
-    /* Top HUD */
+
+    /* Accessible Focus Ring (WCAG 2.2 AA/AAA per UI/UX Pro Max) */
+    button:focus-visible {
+      outline: 2px solid var(--color-warm-gold);
+      outline-offset: 3px;
+    }
+
+    /* Glassmorphic Card Surface */
+    .glass-card {
+      background: var(--color-card-glass);
+      backdrop-filter: blur(var(--blur-amount));
+      -webkit-backdrop-filter: blur(var(--blur-amount));
+      border: 1px solid var(--color-card-border);
+      box-shadow:
+        0 12px 32px rgba(4, 2, 12, 0.65),
+        inset 0 1px 0 var(--color-card-highlight);
+      border-radius: 16px;
+      transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+    }
+
+    /* Top HUD Bar */
     #hud-top {
-      position: absolute; top: 16px; left: 16px; right: 16px;
-      display: flex; justify-content: space-between; align-items: flex-start;
-      pointer-events: none; z-index: 10;
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      pointer-events: none;
+      z-index: 10;
     }
-    .hud-card {
-      background: var(--panel-bg);
-      border: 1px solid rgba(255, 179, 71, 0.35);
-      border-radius: 14px;
-      padding: 12px 18px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(8px);
+
+    .hud-brand-card {
+      padding: 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .hud-title {
-      font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px;
-      color: var(--warm-gold); margin-bottom: 6px; font-weight: 700;
+
+    .hud-header-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      color: var(--color-warm-gold);
     }
+
     .hud-stats {
-      display: flex; gap: 22px; align-items: center; font-size: 18px; font-weight: 700;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      flex-wrap: wrap;
     }
-    .stat-item { display: flex; align-items: center; gap: 7px; }
-    .stat-label { font-size: 13px; font-weight: 500; opacity: 0.8; }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      color: var(--color-primary);
+      filter: drop-shadow(0 0 6px var(--color-primary-glow));
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-muted-foreground);
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-foreground);
+    }
+
+    /* Flame Pips (Health) */
+    #hud-flames {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .flame-pip {
-      display: inline-block; width: 14px; height: 20px;
-      background: radial-gradient(circle at 50% 65%, #fff5cc 10%, #ff9900 55%, #cc3300 100%);
+      display: inline-block;
+      width: 14px;
+      height: 20px;
+      background: radial-gradient(circle at 50% 65%, #FFF8D6 12%, #FF9E1B 55%, #D93800 100%);
       border-radius: 50% 50% 45% 45%;
-      box-shadow: 0 0 10px #ff9900;
-      margin-right: 4px;
-      transition: transform 0.2s, opacity 0.2s;
+      box-shadow: 0 0 12px #FF9E1B;
+      transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
     }
+
     .flame-pip.lost {
-      background: #2b2338; box-shadow: none; opacity: 0.35; transform: scale(0.8);
+      background: rgba(65, 50, 88, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: none;
+      opacity: 0.4;
+      transform: scale(0.82);
     }
 
-    /* Bottom controls hint & action prompt */
-    #hud-bottom {
-      position: absolute; bottom: 16px; left: 16px; right: 16px;
-      display: flex; justify-content: space-between; align-items: flex-end;
-      pointer-events: none; z-index: 10;
+    /* Top-Right Score & Timer + Quick Actions */
+    .hud-right-group {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      pointer-events: auto;
     }
+
+    .hud-score-card {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    /* Touch-compliant 44x44px Action Button (UI/UX Pro Max Priority 2) */
+    .icon-action-btn {
+      min-width: 46px;
+      min-height: 46px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      color: var(--color-warm-gold);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .icon-action-btn:hover {
+      border-color: var(--color-warm-gold);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(255, 179, 71, 0.25);
+    }
+
+    .icon-action-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Contextual Prompt Banner */
     #prompt-banner {
-      position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%);
-      background: rgba(255, 179, 71, 0.94); color: #1b0e02;
-      padding: 8px 20px; border-radius: 999px; font-weight: 700;
-      font-size: 15px; box-shadow: 0 0 20px rgba(255, 179, 71, 0.7);
-      display: none; z-index: 12;
-    }
-    .controls-list {
-      font-size: 13px; line-height: 1.6; color: #e2d4f0;
-    }
-    .key-badge {
-      display: inline-block; padding: 1px 7px; border-radius: 5px;
-      background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.25);
-      font-family: monospace; font-weight: 700; color: var(--warm-gold);
+      position: absolute;
+      bottom: 108px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(255, 195, 95, 0.96), rgba(245, 135, 35, 0.96));
+      color: #1A0D02;
+      padding: 10px 24px;
+      border-radius: 999px;
+      border: 1px solid #FFF2C8;
+      font-weight: 800;
+      font-size: 15px;
+      box-shadow: 0 0 28px rgba(255, 179, 71, 0.75);
+      display: none;
+      z-index: 12;
+      white-space: nowrap;
     }
 
-    /* Modal overlay for Win / Lose */
+    /* Bottom HUD Bar */
+    #hud-bottom {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .controls-card {
+      padding: 12px 18px;
+      font-size: 13px;
+      line-height: 1.75;
+      color: var(--color-foreground);
+    }
+
+    .key-badge {
+      display: inline-block;
+      padding: 1px 8px;
+      margin: 0 2px;
+      border-radius: 6px;
+      background: rgba(255, 226, 138, 0.14);
+      border: 1px solid rgba(255, 226, 138, 0.38);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-warm-gold);
+    }
+
+    .creative-card {
+      padding: 12px 18px;
+      text-align: right;
+      min-width: 245px;
+    }
+
+    .creative-header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      color: var(--color-warm-gold);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    #island-light-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #FFB347, #FFF0A8);
+      box-shadow: 0 0 10px #FFB347;
+      transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Modal Overlay for Win / Lose */
     #overlay {
-      position: absolute; inset: 0;
+      position: absolute;
+      inset: 0;
       background: rgba(9, 6, 20, 0.84);
-      backdrop-filter: blur(8px);
-      display: none; flex-direction: column; justify-content: center; align-items: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
       z-index: 30;
     }
-    #overlay.visible { display: flex; }
+
+    #overlay.visible {
+      display: flex;
+    }
+
     .modal-box {
-      background: linear-gradient(145deg, #1b112c, #0f091c);
-      border: 2px solid var(--amber);
-      border-radius: 20px;
-      padding: 36px 48px;
+      background: linear-gradient(155deg, rgba(30, 20, 52, 0.95), rgba(14, 9, 28, 0.98));
+      border: 2px solid var(--color-primary);
+      border-radius: 24px;
+      padding: 36px 44px;
       text-align: center;
       max-width: 480px;
-      box-shadow: 0 0 50px rgba(255, 179, 71, 0.3);
+      width: 100%;
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.8),
+        0 0 50px rgba(255, 179, 71, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
     }
+
+    .modal-icon-badge {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: rgba(255, 179, 71, 0.16);
+      border: 1px solid rgba(255, 226, 138, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-warm-gold);
+      box-shadow: 0 0 24px rgba(255, 179, 71, 0.35);
+    }
+
     .modal-box h1 {
-      font-size: 36px; margin-bottom: 12px; color: var(--warm-gold);
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--color-warm-gold);
     }
+
     .modal-box p {
-      font-size: 16px; line-height: 1.5; color: #ddd0ec; margin-bottom: 20px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-muted-foreground);
+      margin-bottom: 22px;
     }
+
     .final-score {
-      font-size: 26px; font-weight: 800; color: #fff;
-      margin-bottom: 26px;
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--color-foreground);
+      margin-bottom: 28px;
+      padding: 12px 20px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 226, 138, 0.22);
     }
+
     .btn-restart {
-      background: linear-gradient(135deg, #ffb347, #ff7b00);
-      color: #1a0c00; border: none; border-radius: 999px;
-      padding: 12px 34px; font-size: 17px; font-weight: 800;
-      cursor: pointer; pointer-events: auto;
-      box-shadow: 0 6px 20px rgba(255, 140, 0, 0.5);
-      transition: transform 0.15s;
+      min-height: 48px;
+      background: linear-gradient(135deg, #FFC45C, #FF7B00);
+      color: #1A0C00;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 36px;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(255, 140, 0, 0.48);
+      transition: transform 180ms ease, box-shadow 180ms ease;
     }
-    .btn-restart:hover { transform: scale(1.05); }
+
+    .btn-restart:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 12px 30px rgba(255, 160, 20, 0.65);
+    }
+
+    /* Respect prefers-reduced-motion per UI/UX Pro Max checklist */
+    @media (prefers-reduced-motion: reduce) {
+      *, .flame-pip, .glass-card, .btn-restart, #island-light-bar {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    /* Responsive layout for smaller screens */
+    @media (max-width: 768px) {
+      #hud-top, #hud-bottom {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .creative-card {
+        text-align: left;
+      }
+      .creative-header {
+        justify-content: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
-  <canvas id="game-canvas"></canvas>
+  <canvas id="game-canvas" aria-label="Không gian 3D Đảo Đèn Lồng"></canvas>
 
-  <div id="hud-top">
-    <div class="hud-card">
-      <div class="hud-title">Đảo Đèn Lồng · Đêm 1: Đảo Bến</div>
+  <!-- Top HUD -->
+  <header id="hud-top" role="region" aria-label="Thông số trạng thái Mây">
+    <div class="glass-card hud-brand-card">
+      <div class="hud-header-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          <circle cx="12" cy="12" r="4"/>
+        </svg>
+        <span>Đảo Đèn Lồng · Đêm 1: Đảo Bến</span>
+      </div>
       <div class="hud-stats">
-        <div class="stat-item">
+        <!-- Flames / Health -->
+        <div class="stat-item" title="Ngọn lửa hộ mệnh của Mây">
+          <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2c1.5 3.5 4.5 5.5 4.5 9.5a4.5 4.5 0 1 1-9 0C7.5 9 9.5 6 12 2zm0 16a6.5 6.5 0 0 0 6.5-6.5c0-4.5-3.5-7.5-6.5-11.5C9 4 5.5 7 5.5 11.5A6.5 6.5 0 0 0 12 18z"/>
+          </svg>
           <span class="stat-label">Ngọn lửa:</span>
-          <span id="hud-flames"></span>
+          <span id="hud-flames" aria-live="polite"></span>
         </div>
-        <div class="stat-item">
+
+        <!-- Carried Fireflies -->
+        <div class="stat-item" title="Số đom đóm Mây đang mang theo">
+          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3l1.9 5.8h6.1l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8-4.9-3.6h6.1z"/>
+          </svg>
           <span class="stat-label">Đom đóm:</span>
-          <span id="hud-carried" style="color:#ffd27f">0 / 5</span>
+          <span id="hud-carried" class="stat-value" style="color:var(--color-warm-gold)" aria-live="polite">0 / 5</span>
         </div>
-        <div class="stat-item">
+
+        <!-- Lit Great Lanterns -->
+        <div class="stat-item" title="Số Đèn Lồng Lớn đã thắp sáng">
+          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 3h6l2 4H7l2-4z"/>
+            <rect x="7" y="7" width="10" height="11" rx="2"/>
+            <path d="M9 18h6M12 18v4"/>
+          </svg>
           <span class="stat-label">Đèn Lồng:</span>
-          <span id="hud-lanterns" style="color:#ffb347">0 / 5</span>
+          <span id="hud-lanterns" class="stat-value" style="color:var(--color-primary)" aria-live="polite">0 / 5</span>
         </div>
       </div>
     </div>
 
-    <div class="hud-card">
-      <div class="hud-stats">
+    <div class="hud-right-group">
+      <div class="glass-card hud-score-card">
         <div class="stat-item">
+          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 3"/>
+          </svg>
           <span class="stat-label">Thời gian:</span>
-          <span id="hud-time">03:00</span>
+          <span id="hud-time" class="stat-value" aria-live="off">03:00</span>
         </div>
         <div class="stat-item">
+          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 5h1.5a2.5 2.5 0 0 0 0-5H18M6 4h12v6a6 6 0 0 1-12 0V4zm6 12v4m-4 0h8"/>
+          </svg>
           <span class="stat-label">Điểm:</span>
-          <span id="hud-score" style="color:#ffd27f">0</span>
+          <span id="hud-score" class="stat-value" style="color:var(--color-warm-gold)" aria-live="polite">0</span>
         </div>
       </div>
+
+      <!-- Accessible 44x44px Sound Toggle Button -->
+      <button id="btn-sound-toggle" type="button" class="glass-card icon-action-btn" aria-label="Bật hoặc tắt âm thanh Chuông gió (Phím M)" title="Bật/Tắt Chuông gió Ngũ cung (Phím M)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+          <path id="sound-waves-icon" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+        <span id="btn-sound-label">Chuông: Bật</span>
+      </button>
     </div>
-  </div>
+  </header>
 
-  <div id="prompt-banner">Nhấn [E] để thắp Đèn Lồng</div>
+  <!-- Contextual Prompt -->
+  <div id="prompt-banner" role="status" aria-live="polite">Nhấn [E] để thắp Đèn Lồng</div>
 
-  <div id="hud-bottom">
-    <div class="hud-card controls-list">
-      <div><span class="key-badge">W A S D</span> / <span class="key-badge">Phím Mũi Tên</span> Di chuyển · <span class="key-badge">Space</span> Nhảy</div>
+  <!-- Bottom HUD -->
+  <footer id="hud-bottom" role="region" aria-label="Hướng dẫn điều khiển và Tiến độ sáng tạo">
+    <div class="glass-card controls-card">
+      <div><span class="key-badge">W A S D</span> / <span class="key-badge">Mũi Tên</span> Di chuyển · <span class="key-badge">Space</span> Nhảy</div>
       <div><span class="key-badge">E</span> Nạp đom đóm thắp đèn · <span class="key-badge">F</span> Tỏa sáng xua Bóng Mực (tốn 1 đom đóm)</div>
       <div><span class="key-badge">Q / R</span> hoặc <span class="key-badge">Kéo chuột</span> Xoay Camera 3D · <span class="key-badge">M</span> Bật/Tắt Chuông gió</div>
     </div>
-    <div class="hud-card controls-list" style="text-align:right">
-      <div style="color:var(--warm-gold);font-weight:700">Sáng tạo: Hoa Đăng & Chuông Gió</div>
-      <div id="hud-creative-status">Độ sáng đảo: 0% · Chuông gió: Bật</div>
-    </div>
-  </div>
 
-  <div id="overlay">
+    <div class="glass-card creative-card">
+      <div class="creative-header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+        </svg>
+        <span>Sáng tạo: Hoa Đăng & Chuông Gió</span>
+      </div>
+      <div id="hud-creative-status" style="font-size:13px;color:var(--color-muted-foreground)">Độ sáng đảo: 0% · Chuông gió: Bật</div>
+      <div class="progress-track" aria-hidden="true">
+        <div id="island-light-bar"></div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- End Game Modal -->
+  <div id="overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
     <div class="modal-box">
+      <div class="modal-icon-badge" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 3h6l2 4H7l2-4z"/>
+          <rect x="7" y="7" width="10" height="11" rx="2"/>
+          <path d="M9 18h6M12 18v4"/>
+        </svg>
+      </div>
       <h1 id="modal-title">Bình Minh Đã Lên!</h1>
       <p id="modal-desc">Mây đã thắp sáng toàn bộ 5 Đèn Lồng Lớn và xua tan sương đen khỏi Đảo Bến.</p>
       <div class="final-score">Tổng điểm: <span id="modal-score">0</span></div>
-      <button class="btn-restart" id="btn-restart">Chơi lại Đêm 1</button>
+      <button class="btn-restart" id="btn-restart" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        <span>Chơi lại Đêm 1</span>
+      </button>
     </div>
   </div>
 

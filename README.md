@@ -86,6 +86,7 @@ node src/headless.js --seed 101 --night 1 \
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | File hướng dẫn cố định cho AI Agent (kiến trúc, lệnh chuẩn, quy tắc Test Contract) |
 | [`.agents/skills/verify-contract/SKILL.md`](.agents/skills/verify-contract/SKILL.md) | Skill tự động hóa quy trình kiểm chứng contract và tính tất định |
+| [`.agents/skills/ui-ux-pro-max/SKILL.md`](.agents/skills/ui-ux-pro-max/SKILL.md) | Skill UI/UX Pro Max Design Intelligence (tạo Design System [`design-system/dao-den-long/MASTER.md`](design-system/dao-den-long/MASTER.md)) |
 | [`.githooks/pre-commit`](.githooks/pre-commit) | Git hook chặn commit khi bộ test `tests/run_tests.js` chưa xanh |
 | [`.github/workflows/verify.yml`](.github/workflows/verify.yml) | GitHub Actions CI tự động chạy test trên Ubuntu mỗi lần push / tag |
 | [`docs/notes/phase-1-notes.md`](docs/notes/phase-1-notes.md) | Tiêu chí nghiệm thu, giả định PRD-0, nhật ký dùng AI & ước tính token Phase 1 |
