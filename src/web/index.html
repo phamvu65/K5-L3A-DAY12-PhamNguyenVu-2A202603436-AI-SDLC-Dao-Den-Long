@@ -3,543 +3,320 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Đảo Đèn Lồng — Đêm 1: Đảo Bến</title>
+  <title>Đảo Đèn Lồng — Ba Hòn Đảo</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
     :root {
-      /* UI/UX Pro Max Design Tokens — Đảo Đèn Lồng (Fairy-Tale Dark Glassmorphism) */
-      --color-primary: #FFB347;
-      --color-primary-glow: rgba(255, 179, 71, 0.45);
-      --color-warm-gold: #FFE28A;
-      --color-accent-violet: #A78BFA;
-      --color-danger-ink: #F43F5E;
-      --color-background: #090614;
-      --color-foreground: #F8F4EC;
-      --color-muted-foreground: #C8BCE0;
-      --color-card-glass: rgba(18, 12, 34, 0.76);
-      --color-card-border: rgba(255, 195, 105, 0.28);
-      --color-card-highlight: rgba(255, 255, 255, 0.12);
-      --blur-amount: 16px;
+      --color-sky: #0E1430;
+      --color-fog: #1B2350;
+      --color-lantern-lit: #FFB347;
+      --color-lantern-core: #FFE9B0;
+      --color-gold: #F2C14E;
+      --color-danger: #FF5A5F;
+      --color-ui-text: #F5F1E6;
+      --color-muted: #B8C2D8;
+      --color-glass: rgba(14, 20, 48, 0.80);
+      --color-border: rgba(242, 193, 78, 0.34);
       --font-display: 'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
       --font-sans: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
     body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--color-background);
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--color-sky);
       font-family: var(--font-sans);
-      color: var(--color-foreground);
+      color: var(--color-ui-text);
       font-size: 16px;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
     }
 
-    #game-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      z-index: 1;
-    }
+    #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
 
-    /* Accessible Focus Ring (WCAG 2.2 AA/AAA per UI/UX Pro Max) */
-    button:focus-visible {
-      outline: 2px solid var(--color-warm-gold);
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid var(--color-gold);
       outline-offset: 3px;
     }
 
-    /* Glassmorphic Card Surface */
     .glass-card {
-      background: var(--color-card-glass);
-      backdrop-filter: blur(var(--blur-amount));
-      -webkit-backdrop-filter: blur(var(--blur-amount));
-      border: 1px solid var(--color-card-border);
-      box-shadow:
-        0 12px 32px rgba(4, 2, 12, 0.65),
-        inset 0 1px 0 var(--color-card-highlight);
-      border-radius: 16px;
-      transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
-    }
-
-    /* Top HUD Bar */
-    #hud-top {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    .hud-brand-card {
-      padding: 12px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .hud-header-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-display);
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.4px;
-      color: var(--color-warm-gold);
-    }
-
-    .hud-stats {
-      display: flex;
-      gap: 24px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .stat-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .stat-icon {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-      color: var(--color-primary);
-      filter: drop-shadow(0 0 6px var(--color-primary-glow));
-    }
-
-    .stat-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--color-muted-foreground);
-    }
-
-    .stat-value {
-      font-family: var(--font-display);
-      font-size: 20px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      color: var(--color-foreground);
-    }
-
-    /* Flame Pips (Health) */
-    #hud-flames {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .flame-pip {
-      display: inline-block;
-      width: 14px;
-      height: 20px;
-      background: radial-gradient(circle at 50% 65%, #FFF8D6 12%, #FF9E1B 55%, #D93800 100%);
-      border-radius: 50% 50% 45% 45%;
-      box-shadow: 0 0 12px #FF9E1B;
-      transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
-    }
-
-    .flame-pip.lost {
-      background: rgba(65, 50, 88, 0.55);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: none;
-      opacity: 0.4;
-      transform: scale(0.82);
-    }
-
-    /* Top-Right Score & Timer + Quick Actions */
-    .hud-right-group {
-      display: flex;
-      align-items: stretch;
-      gap: 12px;
-      pointer-events: auto;
-    }
-
-    .hud-score-card {
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      gap: 22px;
-    }
-
-    /* Touch-compliant 44x44px Action Button (UI/UX Pro Max Priority 2) */
-    .icon-action-btn {
-      min-width: 46px;
-      min-height: 46px;
-      padding: 0 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      color: var(--color-warm-gold);
-      font-family: var(--font-sans);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .icon-action-btn:hover {
-      border-color: var(--color-warm-gold);
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(255, 179, 71, 0.25);
-    }
-
-    .icon-action-btn:active {
-      transform: translateY(0);
-    }
-
-    /* Contextual Prompt Banner */
-    #prompt-banner {
-      position: absolute;
-      bottom: 108px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, rgba(255, 195, 95, 0.96), rgba(245, 135, 35, 0.96));
-      color: #1A0D02;
-      padding: 10px 24px;
-      border-radius: 999px;
-      border: 1px solid #FFF2C8;
-      font-weight: 800;
-      font-size: 15px;
-      box-shadow: 0 0 28px rgba(255, 179, 71, 0.75);
-      display: none;
-      z-index: 12;
-      white-space: nowrap;
-    }
-
-    /* Bottom HUD Bar */
-    #hud-bottom {
-      position: absolute;
-      bottom: 16px;
-      left: 16px;
-      right: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 16px;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    .controls-card {
-      padding: 12px 18px;
-      font-size: 13px;
-      line-height: 1.75;
-      color: var(--color-foreground);
-    }
-
-    .key-badge {
-      display: inline-block;
-      padding: 1px 8px;
-      margin: 0 2px;
-      border-radius: 6px;
-      background: rgba(255, 226, 138, 0.14);
-      border: 1px solid rgba(255, 226, 138, 0.38);
-      font-family: var(--font-display);
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--color-warm-gold);
-    }
-
-    .creative-card {
-      padding: 12px 18px;
-      text-align: right;
-      min-width: 245px;
-    }
-
-    .creative-header {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 6px;
-      color: var(--color-warm-gold);
-      font-family: var(--font-display);
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .progress-track {
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 6px;
-    }
-
-    #island-light-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #FFB347, #FFF0A8);
-      box-shadow: 0 0 10px #FFB347;
-      transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    /* Modal Overlay for Win / Lose */
-    #overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(9, 6, 20, 0.84);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      z-index: 30;
-    }
-
-    #overlay.visible {
-      display: flex;
-    }
-
-    .modal-box {
-      background: linear-gradient(155deg, rgba(30, 20, 52, 0.95), rgba(14, 9, 28, 0.98));
-      border: 2px solid var(--color-primary);
-      border-radius: 24px;
-      padding: 36px 44px;
-      text-align: center;
-      max-width: 480px;
-      width: 100%;
-      box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.8),
-        0 0 50px rgba(255, 179, 71, 0.28),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18);
-    }
-
-    .modal-icon-badge {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 16px;
-      border-radius: 50%;
-      background: rgba(255, 179, 71, 0.16);
-      border: 1px solid rgba(255, 226, 138, 0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--color-warm-gold);
-      box-shadow: 0 0 24px rgba(255, 179, 71, 0.35);
-    }
-
-    .modal-box h1 {
-      font-family: var(--font-display);
-      font-size: 32px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      color: var(--color-warm-gold);
-    }
-
-    .modal-box p {
-      font-size: 16px;
-      line-height: 1.6;
-      color: var(--color-muted-foreground);
-      margin-bottom: 22px;
-    }
-
-    .final-score {
-      font-family: var(--font-display);
-      font-size: 26px;
-      font-weight: 700;
-      color: var(--color-foreground);
-      margin-bottom: 28px;
-      padding: 12px 20px;
+      background: var(--color-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--color-border);
+      box-shadow: 0 10px 30px rgba(4, 6, 18, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       border-radius: 14px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 226, 138, 0.22);
     }
 
-    .btn-restart {
-      min-height: 48px;
-      background: linear-gradient(135deg, #FFC45C, #FF7B00);
-      color: #1A0C00;
-      border: none;
-      border-radius: 999px;
-      padding: 12px 36px;
-      font-family: var(--font-sans);
-      font-size: 16px;
-      font-weight: 800;
-      cursor: pointer;
-      pointer-events: auto;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      box-shadow: 0 8px 24px rgba(255, 140, 0, 0.48);
-      transition: transform 180ms ease, box-shadow 180ms ease;
+    /* Top HUD: Left (Flames) | Center (Timer) | Right (Lanterns & Score) */
+    #hud-top {
+      position: absolute; top: 14px; left: 16px; right: 16px;
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 12px;
+      pointer-events: none; z-index: 10;
     }
 
-    .btn-restart:hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 12px 30px rgba(255, 160, 20, 0.65);
+    .hud-left-card { padding: 10px 16px; justify-self: start; display: flex; align-items: center; gap: 14px; }
+    .hud-center-card { padding: 10px 24px; justify-self: center; text-align: center; }
+    .hud-right-card { padding: 10px 16px; justify-self: end; display: flex; align-items: center; gap: 18px; }
+
+    .hud-night-badge {
+      font-family: var(--font-display); font-size: 12px; font-weight: 700;
+      letter-spacing: 1px; color: var(--color-gold); text-transform: uppercase;
     }
 
-    /* Respect prefers-reduced-motion per UI/UX Pro Max checklist */
-    @media (prefers-reduced-motion: reduce) {
-      *, .flame-pip, .glass-card, .btn-restart, #island-light-bar {
-        transition: none !important;
-        animation: none !important;
-      }
+    #hud-flames { display: inline-flex; align-items: center; gap: 6px; }
+    .flame-pip {
+      display: inline-block; width: 14px; height: 20px;
+      background: radial-gradient(circle at 50% 65%, #FFE9B0 12%, #FFB347 55%, #C8102E 100%);
+      border-radius: 50% 50% 45% 45%; box-shadow: 0 0 10px #FFB347;
+      transition: transform 200ms, opacity 200ms;
+    }
+    .flame-pip.lost { background: rgba(91, 95, 110, 0.4); box-shadow: none; opacity: 0.35; transform: scale(0.8); }
+
+    #hud-time {
+      font-family: var(--font-display); font-size: 26px; font-weight: 700;
+      font-variant-numeric: tabular-nums; color: var(--color-ui-text); line-height: 1.1;
+    }
+    #hud-time.danger-blink {
+      color: var(--color-danger);
+      animation: blinkPulse 0.8s infinite ease-in-out;
+    }
+    @keyframes blinkPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+    .stat-label { font-size: 12px; color: var(--color-muted); font-weight: 600; }
+    .stat-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--color-gold); }
+
+    /* Bottom HUD: Left (Controls/Status) | Center (10-slot Firefly Bar) | Right (Dash & Pulse Cooldowns) */
+    #hud-bottom {
+      position: absolute; bottom: 14px; left: 16px; right: 16px;
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px;
+      pointer-events: none; z-index: 10;
     }
 
-    /* Responsive layout for smaller screens */
-    @media (max-width: 768px) {
-      #hud-top, #hud-bottom {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .creative-card {
-        text-align: left;
-      }
-      .creative-header {
-        justify-content: flex-start;
-      }
+    .hud-controls-mini { padding: 10px 14px; justify-self: start; font-size: 12px; line-height: 1.65; color: var(--color-muted); }
+    .key-badge {
+      display: inline-block; padding: 0 6px; border-radius: 4px;
+      background: rgba(242, 193, 78, 0.15); border: 1px solid rgba(242, 193, 78, 0.4);
+      font-family: var(--font-display); font-weight: 700; color: var(--color-gold);
+    }
+
+    .mote-bar-card { padding: 10px 16px; justify-self: center; text-align: center; }
+    .mote-slots { display: flex; gap: 5px; margin-top: 6px; }
+    .mote-slot {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 229, 138, 0.28);
+      transition: background 150ms, box-shadow 150ms, transform 150ms;
+    }
+    .mote-slot.filled {
+      background: radial-gradient(circle, #FFF6C2 20%, #FFE58A 70%, #FFB347 100%);
+      box-shadow: 0 0 10px #FFE58A; transform: scale(1.06);
+    }
+
+    .cooldown-card { padding: 10px 14px; justify-self: end; display: flex; gap: 12px; align-items: center; }
+    .cd-pill {
+      display: flex; flex-direction: column; align-items: center; min-width: 74px;
+      padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(242, 193, 78, 0.28);
+    }
+    .cd-pill.ready { border-color: var(--color-gold); background: rgba(242, 193, 78, 0.14); }
+    .cd-pill-name { font-size: 11px; font-weight: 700; color: var(--color-muted); }
+    .cd-pill-val { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--color-gold); }
+
+    /* Prompt & Offscreen Lantern Arrow & Wind Warning */
+    #prompt-banner {
+      position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, #FFB347, #F2C14E); color: #1A0E03;
+      padding: 8px 22px; border-radius: 999px; font-weight: 800; font-size: 15px;
+      box-shadow: 0 0 24px rgba(255, 179, 71, 0.75); display: none; z-index: 12;
+    }
+    #wind-banner {
+      position: absolute; top: 82px; left: 50%; transform: translateX(-50%);
+      background: rgba(18, 56, 74, 0.9); border: 1px solid #8FA3B8; color: #F5F1E6;
+      padding: 6px 18px; border-radius: 999px; font-weight: 700; font-size: 13px;
+      display: none; z-index: 12;
+    }
+    #offscreen-arrow {
+      position: absolute; top: 50%; left: 50%; width: 34px; height: 34px;
+      pointer-events: none; z-index: 11; display: none;
+      filter: drop-shadow(0 0 8px #FFB347);
+    }
+
+    /* Fullscreen Overlays: Main Menu, Intro, Pause, Settings, Result */
+    .screen-overlay {
+      position: absolute; inset: 0; background: rgba(14, 20, 48, 0.86);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      display: none; flex-direction: column; justify-content: center; align-items: center;
+      padding: 20px; z-index: 40;
+    }
+    .screen-overlay.visible { display: flex; }
+
+    .panel-box {
+      background: linear-gradient(155deg, rgba(27, 35, 80, 0.96), rgba(14, 20, 48, 0.98));
+      border: 2px solid var(--color-gold); border-radius: 22px;
+      padding: 32px 40px; max-width: 520px; width: 100%; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 45px rgba(242, 193, 78, 0.25);
+    }
+    .panel-box h1 { font-family: var(--font-display); font-size: 34px; color: var(--color-gold); margin-bottom: 10px; }
+    .panel-box h2 { font-family: var(--font-display); font-size: 26px; color: var(--color-gold); margin-bottom: 10px; }
+    .panel-box p { font-size: 15px; line-height: 1.6; color: var(--color-muted); margin-bottom: 20px; }
+
+    .btn-stack { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+    .btn-primary {
+      min-height: 46px; min-width: 230px; padding: 10px 28px; border-radius: 999px; border: none;
+      background: linear-gradient(135deg, #FFB347, #F2C14E); color: #160D02;
+      font-family: var(--font-sans); font-size: 16px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 6px 20px rgba(242, 193, 78, 0.45); transition: transform 150ms;
+    }
+    .btn-primary:hover { transform: scale(1.04); }
+    .btn-secondary {
+      min-height: 44px; min-width: 230px; padding: 10px 24px; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid var(--color-border);
+      color: var(--color-ui-text); font-size: 15px; font-weight: 700; cursor: pointer;
+    }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
+
+    .setting-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; text-align: left; font-size: 15px;
+    }
+    .setting-row input[type="range"] { width: 160px; accent-color: var(--color-gold); }
+    .quote-box {
+      font-style: italic; background: rgba(255,255,255,0.06); border-left: 3px solid var(--color-gold);
+      padding: 12px 16px; border-radius: 8px; margin-bottom: 22px; color: var(--color-ui-text); text-align: left;
     }
   </style>
 </head>
 <body>
-  <canvas id="game-canvas" aria-label="Không gian 3D Đảo Đèn Lồng"></canvas>
+  <canvas id="game-canvas"></canvas>
 
-  <!-- Top HUD -->
-  <header id="hud-top" role="region" aria-label="Thông số trạng thái Mây">
-    <div class="glass-card hud-brand-card">
-      <div class="hud-header-row">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-          <circle cx="12" cy="12" r="4"/>
-        </svg>
-        <span>Đảo Đèn Lồng · Đêm 1: Đảo Bến</span>
-      </div>
-      <div class="hud-stats">
-        <!-- Flames / Health -->
-        <div class="stat-item" title="Ngọn lửa hộ mệnh của Mây">
-          <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 2c1.5 3.5 4.5 5.5 4.5 9.5a4.5 4.5 0 1 1-9 0C7.5 9 9.5 6 12 2zm0 16a6.5 6.5 0 0 0 6.5-6.5c0-4.5-3.5-7.5-6.5-11.5C9 4 5.5 7 5.5 11.5A6.5 6.5 0 0 0 12 18z"/>
-          </svg>
+  <!-- HUD -->
+  <header id="hud-top">
+    <div class="glass-card hud-left-card">
+      <div>
+        <div class="hud-night-badge" id="hud-night-label">Đêm 1 · Đảo Bến</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
           <span class="stat-label">Ngọn lửa:</span>
-          <span id="hud-flames" aria-live="polite"></span>
-        </div>
-
-        <!-- Carried Fireflies -->
-        <div class="stat-item" title="Số đom đóm Mây đang mang theo">
-          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3l1.9 5.8h6.1l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8-4.9-3.6h6.1z"/>
-          </svg>
-          <span class="stat-label">Đom đóm:</span>
-          <span id="hud-carried" class="stat-value" style="color:var(--color-warm-gold)" aria-live="polite">0 / 5</span>
-        </div>
-
-        <!-- Lit Great Lanterns -->
-        <div class="stat-item" title="Số Đèn Lồng Lớn đã thắp sáng">
-          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 3h6l2 4H7l2-4z"/>
-            <rect x="7" y="7" width="10" height="11" rx="2"/>
-            <path d="M9 18h6M12 18v4"/>
-          </svg>
-          <span class="stat-label">Đèn Lồng:</span>
-          <span id="hud-lanterns" class="stat-value" style="color:var(--color-primary)" aria-live="polite">0 / 5</span>
+          <span id="hud-flames"></span>
         </div>
       </div>
     </div>
 
-    <div class="hud-right-group">
-      <div class="glass-card hud-score-card">
-        <div class="stat-item">
-          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/>
-            <path d="M12 7v5l3 3"/>
-          </svg>
-          <span class="stat-label">Thời gian:</span>
-          <span id="hud-time" class="stat-value" aria-live="off">03:00</span>
-        </div>
-        <div class="stat-item">
-          <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 5h1.5a2.5 2.5 0 0 0 0-5H18M6 4h12v6a6 6 0 0 1-12 0V4zm6 12v4m-4 0h8"/>
-          </svg>
-          <span class="stat-label">Điểm:</span>
-          <span id="hud-score" class="stat-value" style="color:var(--color-warm-gold)" aria-live="polite">0</span>
-        </div>
-      </div>
+    <div class="glass-card hud-center-card">
+      <div class="stat-label">Thời gian tới Bình Minh</div>
+      <div id="hud-time">05:00</div>
+    </div>
 
-      <!-- Accessible 44x44px Sound Toggle Button -->
-      <button id="btn-sound-toggle" type="button" class="glass-card icon-action-btn" aria-label="Bật hoặc tắt âm thanh Chuông gió (Phím M)" title="Bật/Tắt Chuông gió Ngũ cung (Phím M)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-          <path id="sound-waves-icon" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
-        </svg>
-        <span id="btn-sound-label">Chuông: Bật</span>
-      </button>
+    <div class="glass-card hud-right-card">
+      <div>
+        <div class="stat-label">Đèn Lồng</div>
+        <div class="stat-val" id="hud-lanterns">0 / 5</div>
+      </div>
+      <div>
+        <div class="stat-label">Tổng Điểm</div>
+        <div class="stat-val" id="hud-score">0</div>
+      </div>
+      <button id="btn-pause-hud" type="button" class="btn-secondary" style="min-width:44px;min-height:44px;padding:0 12px;pointer-events:auto" title="Tạm dừng (Esc/P)">⏸</button>
     </div>
   </header>
 
-  <!-- Contextual Prompt -->
-  <div id="prompt-banner" role="status" aria-live="polite">Nhấn [E] để thắp Đèn Lồng</div>
+  <div id="wind-banner">⚠ Gió mạnh sắp thổi!</div>
+  <div id="prompt-banner">E — Nạp ánh sáng (0/10)</div>
+  <svg id="offscreen-arrow" viewBox="0 0 24 24" fill="#FFB347" stroke="#0E1430" stroke-width="1.5">
+    <path d="M12 2L19 20L12 16L5 20L12 2Z"/>
+  </svg>
 
-  <!-- Bottom HUD -->
-  <footer id="hud-bottom" role="region" aria-label="Hướng dẫn điều khiển và Tiến độ sáng tạo">
-    <div class="glass-card controls-card">
-      <div><span class="key-badge">W A S D</span> / <span class="key-badge">Mũi Tên</span> Di chuyển · <span class="key-badge">Space</span> Nhảy</div>
-      <div><span class="key-badge">E</span> Nạp đom đóm thắp đèn · <span class="key-badge">F</span> Tỏa sáng xua Bóng Mực (tốn 1 đom đóm)</div>
-      <div><span class="key-badge">Q / R</span> hoặc <span class="key-badge">Kéo chuột</span> Xoay Camera 3D · <span class="key-badge">M</span> Bật/Tắt Chuông gió</div>
+  <footer id="hud-bottom">
+    <div class="glass-card hud-controls-mini">
+      <div><span class="key-badge">WASD</span> Di chuyển · <span class="key-badge">Space</span> Nhảy · <span class="key-badge">Shift</span> Lướt</div>
+      <div><span class="key-badge">E</span> Nạp đèn · <span class="key-badge">F</span> Tỏa Sáng (3) · <span class="key-badge">Esc/P</span> Tạm dừng</div>
+      <div id="hud-charm-status" style="color:var(--color-gold);font-weight:700"></div>
     </div>
 
-    <div class="glass-card creative-card">
-      <div class="creative-header">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-        </svg>
-        <span>Sáng tạo: Hoa Đăng & Chuông Gió</span>
+    <div class="glass-card mote-bar-card">
+      <div class="stat-label">Đom Đóm Đang Giữ (<span id="hud-carried-num">0/10</span>)</div>
+      <div class="mote-slots" id="mote-slots"></div>
+    </div>
+
+    <div class="glass-card cooldown-card">
+      <div class="cd-pill ready" id="cd-dash">
+        <span class="cd-pill-name">Lướt [Shift]</span>
+        <span class="cd-pill-val" id="cd-dash-val">Sẵn sàng</span>
       </div>
-      <div id="hud-creative-status" style="font-size:13px;color:var(--color-muted-foreground)">Độ sáng đảo: 0% · Chuông gió: Bật</div>
-      <div class="progress-track" aria-hidden="true">
-        <div id="island-light-bar"></div>
+      <div class="cd-pill ready" id="cd-pulse">
+        <span class="cd-pill-name">Tỏa Sáng [F]</span>
+        <span class="cd-pill-val" id="cd-pulse-val">Sẵn sàng</span>
       </div>
     </div>
   </footer>
 
-  <!-- End Game Modal -->
-  <div id="overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
-    <div class="modal-box">
-      <div class="modal-icon-badge" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 3h6l2 4H7l2-4z"/>
-          <rect x="7" y="7" width="10" height="11" rx="2"/>
-          <path d="M9 18h6M12 18v4"/>
-        </svg>
+  <!-- Main Menu -->
+  <div id="screen-menu" class="screen-overlay visible">
+    <div class="panel-box">
+      <h1>ĐẢO ĐÈN LỒNG</h1>
+      <p>Hành trình 3 Đêm qua Đảo Bến, Đảo Cau và Đảo Chuông để xua tan sương đen.</p>
+      <div class="btn-stack">
+        <button id="btn-start-campaign" class="btn-primary" type="button">Bắt Đầu Hành Trình (3 Đêm)</button>
+        <button id="btn-open-settings-menu" class="btn-secondary" type="button">Cài Đặt</button>
       </div>
-      <h1 id="modal-title">Bình Minh Đã Lên!</h1>
-      <p id="modal-desc">Mây đã thắp sáng toàn bộ 5 Đèn Lồng Lớn và xua tan sương đen khỏi Đảo Bến.</p>
-      <div class="final-score">Tổng điểm: <span id="modal-score">0</span></div>
-      <button class="btn-restart" id="btn-restart" type="button">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-          <path d="M3 3v5h5"/>
-        </svg>
-        <span>Chơi lại Đêm 1</span>
-      </button>
+    </div>
+  </div>
+
+  <!-- Night Intro Screen -->
+  <div id="screen-intro" class="screen-overlay">
+    <div class="panel-box">
+      <h2 id="intro-title">Đêm 1 — Đảo Bến</h2>
+      <p id="intro-subtitle">Hòn đảo khởi đầu giữa biển mây tĩnh lặng</p>
+      <div class="quote-box" id="intro-quote">Lời Ông Đăng: ...</div>
+      <button id="btn-begin-night" class="btn-primary" type="button">Vào Đảo</button>
+    </div>
+  </div>
+
+  <!-- Pause Menu -->
+  <div id="screen-pause" class="screen-overlay">
+    <div class="panel-box">
+      <h2>Tạm Dừng</h2>
+      <div class="btn-stack">
+        <button id="btn-resume" class="btn-primary" type="button">Tiếp Tục</button>
+        <button id="btn-restart-night" class="btn-secondary" type="button">Chơi Lại Đêm Này</button>
+        <button id="btn-open-settings-pause" class="btn-secondary" type="button">Cài Đặt</button>
+        <button id="btn-back-menu" class="btn-secondary" type="button">Về Menu Chính</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="screen-settings" class="screen-overlay">
+    <div class="panel-box">
+      <h2>Cài Đặt</h2>
+      <div class="setting-row">
+        <label for="opt-volume">Âm lượng (<span id="opt-vol-val">70%</span>)</label>
+        <input id="opt-volume" type="range" min="0" max="100" value="70" />
+      </div>
+      <div class="setting-row">
+        <label for="opt-sens">Độ nhạy chuột (<span id="opt-sens-val">1.0x</span>)</label>
+        <input id="opt-sens" type="range" min="3" max="25" value="10" />
+      </div>
+      <button id="btn-close-settings" class="btn-primary" type="button">Lưu & Đóng</button>
+    </div>
+  </div>
+
+  <!-- Result / Dawn Screen -->
+  <div id="screen-result" class="screen-overlay">
+    <div class="panel-box">
+      <h1 id="result-title">Đêm Đã Sáng!</h1>
+      <p id="result-desc">...</p>
+      <div style="font-family:var(--font-display);font-size:24px;color:var(--color-gold);margin-bottom:22px">
+        Điểm Đêm: <span id="result-night-score">0</span> · Tổng Điểm: <span id="result-total-score">0</span>
+      </div>
+      <div class="btn-stack">
+        <button id="btn-next-or-retry" class="btn-primary" type="button">Sang Đêm Kế Tiếp</button>
+        <button id="btn-result-menu" class="btn-secondary" type="button">Về Menu Chính</button>
+      </div>
     </div>
   </div>
 
   <script src="/src/sim/prng.js"></script>
+  <script src="/src/sim/maps.js"></script>
   <script src="/src/sim/world.js"></script>
   <script src="/src/web/game3d.js"></script>
 </body>

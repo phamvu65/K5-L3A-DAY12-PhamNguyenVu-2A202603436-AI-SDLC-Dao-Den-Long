@@ -1,0 +1,23 @@
+{
+  "frames": [
+    {
+      "tick": 0,
+      "move": [
+        1,
+        0
+      ]
+    },
+    {
+      "tick": 10,
+      "move": [
+        0,
+        0
+      ],
+      "dash": true
+    },
+    {
+      "tick": 11,
+      "dash": false
+    }
+  ]
+}

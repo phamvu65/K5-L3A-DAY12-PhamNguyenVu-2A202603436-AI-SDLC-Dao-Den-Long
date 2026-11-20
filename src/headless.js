@@ -39,7 +39,9 @@ function parseArgs(argv) {
       case '--night':
         if (next === undefined) exitWithError(1, 'Missing value for --night');
         args.night = Number(next);
-        if (!Number.isInteger(args.night) || args.night < 1) exitWithError(1, '--night must be a positive integer');
+        if (!Number.isInteger(args.night) || args.night < 1 || args.night > 3) {
+          exitWithError(1, '--night must be 1, 2, or 3');
+        }
         i++;
         break;
       case '--scenario':
@@ -140,7 +142,7 @@ function loadAndValidateInputs(filePath) {
       }
     }
 
-    for (const btn of ['jump', 'interact', 'pulse', 'dash']) {
+    for (const btn of ['jump', 'interact', 'pulse', 'dash', 'pause']) {
       if (f[btn] !== undefined && typeof f[btn] !== 'boolean') {
         exitWithError(2, `Frame at tick ${f.tick} field "${btn}" must be boolean`);
       }
@@ -211,12 +213,13 @@ function main() {
     jump: false,
     interact: false,
     pulse: false,
-    dash: false
+    dash: false,
+    pause: false
   };
 
   // If scenario already won/lost at tick 0 (shouldn't emit events, just check if playing)
   for (let k = 0; k < args.ticks; k++) {
-    if (world.state !== 'playing') break;
+    if (world.state === 'won' || world.state === 'lost') break;
 
     if (frameMap.has(k)) {
       const f = frameMap.get(k);
@@ -226,6 +229,7 @@ function main() {
       if (f.interact !== undefined) currentInput.interact = f.interact;
       if (f.pulse !== undefined) currentInput.pulse = f.pulse;
       if (f.dash !== undefined) currentInput.dash = f.dash;
+      if (f.pause !== undefined) currentInput.pause = f.pause;
     }
 
     const stepEvents = world.step(currentInput);
@@ -237,7 +241,7 @@ function main() {
       lines.push(JSON.stringify(world.getSnapshot()));
     }
 
-    if (world.state !== 'playing') {
+    if (world.state === 'won' || world.state === 'lost') {
       break;
     }
   }
